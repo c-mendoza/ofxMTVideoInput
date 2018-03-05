@@ -12,6 +12,8 @@
 #include "ofxCv.h"
 #include "MTVideoProcess.hpp"
 
+
+
 class MTVideoProcessStream : public MTModel,
 							public ofThread,
 							public std::enable_shared_from_this<MTVideoProcessStream>
@@ -146,7 +148,7 @@ protected:
 	bool isSetup;
 
 	cv::Mat workingImage;
-	cv::Mat tempImage;
+	cv::Mat videoInputImage;
 	cv::Mat processOutput;
 
 	//////////////////////////////////

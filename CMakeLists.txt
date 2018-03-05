@@ -7,7 +7,7 @@ cmake_minimum_required( VERSION 3.3 )
 
 project( ofxMTVideoInput )
 # add_subdirectory(example)
-
+include_directories("src")
 # --------------------- Source Files ---------------------
 
 file(   GLOB_RECURSE

@@ -11,6 +11,7 @@
 #include "ofxMTVideoInput.h"
 #include "MTApp.hpp"
 
+
 MTVideoProcessStream::MTVideoProcessStream(std::string name) : MTModel(name)
 {
 	parameters.add(isRunning.set("Running", false),
@@ -59,22 +60,23 @@ void MTVideoProcessStream::threadedFunction()
 {
 	setThreadName(this->getName());
 
+	MTProcessData processData;
 	while (isThreadRunning())
 	{
 		videoGrabber.update();
 		if (videoGrabber.isFrameNew())
 		{
 			fpsCounter.newFrame();
-			tempImage = ofxCv::toCv(static_cast<const ofPixels&>(videoGrabber.getPixels()));
+			videoInputImage = ofxCv::toCv(static_cast<const ofPixels&>(videoGrabber.getPixels()));
 
-			if (tempImage.cols != processWidth)
+			if (videoInputImage.cols != processWidth)
 			{
 				cv::Size size(processWidth, processHeight);
-				cv::resize(tempImage, workingImage, size);
+				cv::resize(videoInputImage, workingImage, size);
 			}
 			else
 			{
-				workingImage = tempImage;
+				workingImage = videoInputImage;
 			}
 
 			if (mirrorVideo.get())
@@ -82,10 +84,12 @@ void MTVideoProcessStream::threadedFunction()
 				cv::flip(workingImage, workingImage, 1);
 			}
 
-			processOutput = workingImage;
+			processData.clear();
+			processData[MTVideoProcessSourceKey] = videoInputImage;
+			processData[MTVideoProcessStreamKey] = workingImage;
 			for (auto p : videoProcesses)
 			{
-				processOutput = p->process(processOutput);
+				processData = p->process(processData);
 				p->notifyEvents();
 
 			}

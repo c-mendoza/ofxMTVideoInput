@@ -14,12 +14,14 @@
 #include "MTModel.hpp"
 #include "ofxCv.h"
 #include "registry.h"
-
+//#include "MTVideoProcessUI.hpp"
 //#include "ofxMTApp.hpp"
 
 class MTVideoProcessStream;
 
 class MTVideoProcess;
+class MTVideoProcessUI;
+
 
 /**
  * @brief ProcessEventArgs clone (deep copy) the output of the process, making it "thread-safer".
@@ -63,8 +65,14 @@ public:
 	}
 };
 
+typedef std::unordered_map<std::string, cv::Mat> MTProcessData;
+static const std::string MTVideoProcessStreamKey = "MTVideoProcessStreamKey";
+static const std::string MTVideoProcessResultKey = "MTVideoProcessResultKey";
+static const std::string MTVideoProcessSourceKey = "MTVideoProcessSourceKey";
+static const std::string MTVideoProcessMaskKey = "MTVideoProcessMaskKey";
 
-class MTVideoProcess : public MTModel
+class MTVideoProcess : public MTModel,
+					   public std::enable_shared_from_this<MTVideoProcess>
 {
 public:
 
@@ -74,23 +82,16 @@ public:
 	ofFastEvent<MTVideoProcessFastEventArgs<MTVideoProcess>> processCompleteFastEvent;
 	ofEvent<MTVideoProcessEventArgs<MTVideoProcess>> processCompleteEvent;
 
-	MTVideoProcess(std::string name) : MTModel(name)
-	{
-		processTypeName.set("Process Type Name", typeid(this).name());
-		useTransform.set("Use Transform", false);
-		parameters.add(processTypeName, useTransform);
-	};
-
+	MTVideoProcess(std::string name);
 	~MTVideoProcess()
 	{};
 
 //	virtual void loadFromSerializer(ofXml& serializer) = 0;
 //	virtual void saveWithSerializer(ofXml& serializer) = 0;
-	virtual void setup()
-	{}
+	virtual void setup(){}
 
-	virtual cv::Mat process(cv::Mat& image) = 0;
-
+	virtual MTProcessData& process(MTProcessData& input) = 0;
+	virtual std::unique_ptr<MTVideoProcessUI> getUI();
 	virtual void setProcessSize(int w, int h)
 	{
 		processWidth = w;
@@ -136,6 +137,7 @@ protected:
 	int processHeight;
 	ofRectangle outputTarget;
 	bool markProcessSizeChanged = false;
+	std::unique_ptr<MTVideoProcessUI> videoProcessUI;
 
 };
 

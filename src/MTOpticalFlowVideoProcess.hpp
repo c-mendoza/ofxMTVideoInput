@@ -14,6 +14,8 @@
 #include "MTVideoProcess.hpp"
 #include "registry.h"
 
+class MTVideoProcessUI;
+
 class MTOpticalFlowVideoProcess : public MTVideoProcess
 {
 
@@ -46,6 +48,7 @@ public:
 
 	void notifyEvents() override;
 
+//	std::shared_ptr<MTVideoProcessUI> createUI() override;
 	void drawGui(ofxImGui::Settings& settings) override;
 //	virtual void loadFromSerializer(ofXml& serializer);
 //	virtual void saveWithSerializer(ofXml& serializer);
@@ -53,7 +56,7 @@ public:
 	/**
 	 * Returns a cv::Mat with the flow vectors. Input image is unchanged
 	 */
-	cv::Mat process(cv::Mat& image) override;
+	MTProcessData& process(MTProcessData& processData) override;
 
 	ofVec2f getFlowPosition(int x, int y);
 
