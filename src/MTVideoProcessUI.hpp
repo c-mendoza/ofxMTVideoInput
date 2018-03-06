@@ -16,7 +16,7 @@ class MTVideoProcessUI : public std::enable_shared_from_this<MTVideoProcessUI>,
 public:
 	MTVideoProcessUI(std::shared_ptr<MTVideoProcess> videoProcess);
 
-	~MTVideoProcessUI(){}
+	virtual ~MTVideoProcessUI(){}
 
 	virtual void draw(){}
 	virtual void draw(ofxImGui::Settings& settings);

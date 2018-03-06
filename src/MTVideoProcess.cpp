@@ -11,12 +11,12 @@ MTVideoProcess::MTVideoProcess(std::string name) : MTModel(name)
 	parameters.add(processTypeName, useTransform);
 };
 
-std::unique_ptr<MTVideoProcessUI> MTVideoProcess::getUI()
+MTVideoProcess::~MTVideoProcess()
+{}
+
+std::unique_ptr<MTVideoProcessUI> MTVideoProcess::createUI()
 {
-	if (videoProcessUI == nullptr)
-	{
-		auto vp = shared_from_this();
-		videoProcessUI = std::make_unique<MTVideoProcessUI>(vp);
-	}
-	return videoProcessUI;
+	auto vp = shared_from_this();
+	videoProcessUI = std::make_unique<MTVideoProcessUI>(vp);
+	return std::move(videoProcessUI);
 }

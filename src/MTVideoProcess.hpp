@@ -83,15 +83,14 @@ public:
 	ofEvent<MTVideoProcessEventArgs<MTVideoProcess>> processCompleteEvent;
 
 	MTVideoProcess(std::string name);
-	~MTVideoProcess()
-	{};
+	~MTVideoProcess();
 
 //	virtual void loadFromSerializer(ofXml& serializer) = 0;
 //	virtual void saveWithSerializer(ofXml& serializer) = 0;
 	virtual void setup(){}
 
 	virtual MTProcessData& process(MTProcessData& input) = 0;
-	virtual std::unique_ptr<MTVideoProcessUI> getUI();
+	virtual std::unique_ptr<MTVideoProcessUI> createUI();
 	virtual void setProcessSize(int w, int h)
 	{
 		processWidth = w;
@@ -121,9 +120,6 @@ public:
 		}
 
 	}
-
-	virtual void draw()
-	{};//?
 
 	std::string getTypeName()
 	{

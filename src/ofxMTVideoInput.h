@@ -7,6 +7,7 @@
 
 #include "MTVideoProcessStream.hpp"
 #include "MTVideoProcess.hpp"
+#include "MTCommonProcesses.hpp"
 #include "registry.h"
 
 namespace ofxMTVideoInput
