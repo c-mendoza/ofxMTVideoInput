@@ -21,7 +21,7 @@ MTVideoProcessUIWithImage::
 MTVideoProcessUIWithImage(std::shared_ptr<MTVideoProcess> videoProcess,
 						  ofImageType imageType) : MTVideoProcessUI(videoProcess)
 {
-	auto stream = videoProcess->processChain.lock();
+	auto stream = videoProcess->processStream.lock();
 	outputImage.allocate(stream->processWidth, stream->processHeight, imageType);
 	addEventListener(videoProcess->processCompleteFastEvent.newListener([this](
 			const MTVideoProcessFastEventArgs<MTVideoProcess>& args)

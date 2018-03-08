@@ -78,7 +78,7 @@ public:
 
 	ofParameter<bool> useTransform;
 	ofReadOnlyParameter<std::string, MTVideoProcess> processTypeName;
-	std::weak_ptr<MTVideoProcessStream> processChain;
+	std::weak_ptr<MTVideoProcessStream> processStream;
 	ofFastEvent<MTVideoProcessFastEventArgs<MTVideoProcess>> processCompleteFastEvent;
 	ofEvent<MTVideoProcessEventArgs<MTVideoProcess>> processCompleteEvent;
 

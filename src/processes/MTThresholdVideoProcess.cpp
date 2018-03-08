@@ -41,7 +41,7 @@ std::unique_ptr<MTVideoProcessUI> MTThresholdVideoProcess::createUI()
 MTThresholdVideoProcessUI::MTThresholdVideoProcessUI(const std::shared_ptr<MTVideoProcess>& videoProcess)
 		: MTVideoProcessUI(videoProcess)
 {
-	auto stream = videoProcess->processChain.lock();
+	auto stream = videoProcess->processStream.lock();
 	processImage.allocate(stream->processWidth, stream->processHeight, OF_IMAGE_GRAYSCALE);
 	addEventListener(videoProcess->processCompleteFastEvent.newListener([this](
 			const MTVideoProcessFastEventArgs<MTVideoProcess>& args)

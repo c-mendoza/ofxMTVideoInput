@@ -164,7 +164,7 @@ void MTVideoProcessStream::setup()
 	for (const auto& p : videoProcesses)
 	{
 		p->setProcessSize(processWidth, processHeight);
-		p->processChain = shared_from_this();
+		p->processStream = shared_from_this();
 		p->setup();
 	}
 
@@ -338,12 +338,12 @@ void MTVideoProcessStream::addVideoProcess(std::shared_ptr<MTVideoProcess> proce
 {
 	lock();
 	videoProcesses.push_back(process);
-	if (ofStringTimesInString(process->getName(), "_") < 1)
-	{
-		process->setName(process->getName() + "_" + ofToString(videoProcesses.size()));
-	}
+//	if (ofStringTimesInString(process->getName(), "_") < 1)
+//	{
+//		process->setName(process->getName() + "_" + ofToString(videoProcesses.size()));
+//	}
 	processesParameters.add(process->getParameters());
-	process->processChain = shared_from_this();
+	process->processStream = shared_from_this();
 	unlock();
 }
 
