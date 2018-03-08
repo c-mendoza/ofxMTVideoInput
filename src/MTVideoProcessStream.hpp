@@ -13,10 +13,9 @@
 #include "MTVideoProcess.hpp"
 
 
-
 class MTVideoProcessStream : public MTModel,
-							public ofThread,
-							public std::enable_shared_from_this<MTVideoProcessStream>
+							 public ofThread,
+							 public std::enable_shared_from_this<MTVideoProcessStream>
 {
 public:
 	MTVideoProcessStream(std::string name);
@@ -29,19 +28,19 @@ public:
 	//Processes
 	//////////////////////////////////
 
-    ofParameter<bool> mirrorVideo;
+	ofParameter<bool> mirrorVideo;
 	//The pixel dimensions of the video process chain:
 	ofParameter<int> processWidth;
 	ofParameter<int> processHeight;
 	ofParameter<std::string> outputRegionString; //For serialization. Do not modify manually.
 	ofParameter<std::string> inputROIString; //For serialization Do not modify manually.
-	ofParameter<bool>useROI;
+	ofParameter<bool> useROI;
 	ofParameterGroup processesParameters;
 
-    std::shared_ptr<ofPath> outputRegion;
-    std::shared_ptr<ofPath> inputROI;
+	std::shared_ptr<ofPath> outputRegion;
+	std::shared_ptr<ofPath> inputROI;
 
-    std::vector<std::shared_ptr<MTVideoProcess>> videoProcesses;
+	std::vector<std::shared_ptr<MTVideoProcess>> videoProcesses;
 
 	//////////////////////////////////
 	//Event
@@ -73,7 +72,8 @@ public:
 protected:
 	ofFpsCounter fpsCounter;
 public:
-    double getFps() { return fpsCounter.getFps(); }
+	double getFps()
+	{ return fpsCounter.getFps(); }
 //	///Transforms a point in process coordinates to world coordinates,
 //	///using the transformation values specified in the chain's processOut
 //	///members.
@@ -84,8 +84,8 @@ public:
 //	///TODO: Limit transformation position to process-space?
 //	void worldToProcess(ofVec2f worldPoint, ofVec2f& transformedPoint);
 
-    void setCaptureResolution(int w, int h);
-    void setProcessingResolution(int w, int h);
+	void setCaptureResolution(int w, int h);
+	void setProcessingResolution(int w, int h);
 	//////////////////////////////////
 	//Data Handling
 	//////////////////////////////////
@@ -93,8 +93,8 @@ public:
 	void addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, int index);
 	bool removeVideoProcess(std::shared_ptr<MTVideoProcess> process);
 	bool removeVideoProcessAtIndex(int index);
-    std::shared_ptr<MTVideoProcess> getVideoProcessAtIndex(int index);
-    std::shared_ptr<MTVideoProcess> getProcessWithName(std::string name);
+	std::shared_ptr<MTVideoProcess> getVideoProcessAtIndex(int index);
+	std::shared_ptr<MTVideoProcess> getProcessWithName(std::string name);
 	int getVideoProcessCount();
 	void removeAllVideoProcesses();
 
@@ -172,7 +172,7 @@ protected:
 	ofVideoGrabber videoGrabber;
 	ofVideoPlayer videoPlayer;
 
-    bool initializeVideoCapture();
+	bool initializeVideoCapture();
 };
 
 #endif /* NSVideoProcessChain_hpp */
