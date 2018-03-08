@@ -7,8 +7,9 @@
 MTVideoProcess::MTVideoProcess(std::string name) : MTModel(name)
 {
 	processTypeName.set("Process Type Name", typeid(this).name());
-	useTransform.set("Use Transform", false);
-	parameters.add(processTypeName, useTransform);
+//	useTransform.set("Use Transform", false);
+	parameters.add(processTypeName);
+//	processBuffer = cv::Mat
 };
 
 MTVideoProcess::~MTVideoProcess()

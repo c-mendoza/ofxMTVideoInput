@@ -6,7 +6,7 @@
 //
 //
 
-#include "MTOpticalFlowVideoProcess.hpp"
+#include "processes/MTOpticalFlowVideoProcess.hpp"
 
 void MTOpticalFlowVideoProcess::notifyEvents()
 {
@@ -17,8 +17,8 @@ void MTOpticalFlowVideoProcess::notifyEvents()
 	ofNotifyEvent(opticalFlowProcessCompleteFastEvent, processEventArgs, this);
 }
 
-MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess(std::string name) :
-        MTVideoProcess(name)
+MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess() :
+        MTVideoProcess("Optical Flow")
 {
 	parameters.add(usefb.set("Use Farneback", true));
 	parameters.add(fbPyrScale.set("fbPyrScale", .5, 0, .99));

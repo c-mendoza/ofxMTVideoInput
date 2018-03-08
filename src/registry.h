@@ -61,7 +61,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace mtRegistry {
+namespace ofxMTVideoInput {
 
 // Utility macros
 #define REGISTRY_SPACE
@@ -84,18 +84,18 @@ namespace mtRegistry {
     
 #define REGISTER_SUBCLASS0(Base, Derived, Identifier) \
   static bool _registered_##Derived = \
-      mtRegistry::Registry<Base>::Register(Identifier, \
+      ofxMTVideoInput::Registry<Base>::Register(Identifier, \
           REGISTRY_CTOR(Base, Derived,,));
 
 #define REGISTER_SUBCLASS1(Base, Derived, Identifier, dtype1) \
   static bool _registered_##Derived = \
-      mtRegistry::Registry<Base, dtype1>::Register(Identifier, \
+      ofxMTVideoInput::Registry<Base, dtype1>::Register(Identifier, \
           REGISTRY_CTOR(Base, Derived, \
               dtype1 REGISTRY_SPACE arg1, arg1));
 
 #define REGISTER_SUBCLASS2(Base, Derived, Identifier, dtype1, dtype2) \
   static bool _registered_##Derived = \
-      mtRegistry::Registry<Base, dtype1, dtype2>::Register(Identifier, \
+      ofxMTVideoInput::Registry<Base, dtype1, dtype2>::Register(Identifier, \
           REGISTRY_CTOR(Base, Derived, \
               REGISTRY_CONCAT(dtype1 REGISTRY_SPACE arg1, \
                               dtype2 REGISTRY_SPACE arg2), \
@@ -103,7 +103,7 @@ namespace mtRegistry {
 
 #define REGISTER_SUBCLASS3(Base, Derived, Identifier, dtype1, dtype2, dtype3) \
   static bool _registered_##Derived = \
-      mtRegistry::Registry<Base, dtype1, dtype2, dtype3>::Register(Identifier, \
+      ofxMTVideoInput::Registry<Base, dtype1, dtype2, dtype3>::Register(Identifier, \
           REGISTRY_CTOR(Base, Derived, \
               REGISTRY_CONCAT(dtype1 REGISTRY_SPACE arg1, \
                               dtype2 REGISTRY_SPACE arg2, \
@@ -113,7 +113,7 @@ namespace mtRegistry {
 #define REGISTER_SUBCLASS4(Base, Derived, Identifier, dtype1, dtype2, dtype3, \
                            dtype4) \
   static bool _registered_##Derived = \
-      mtRegistry::Registry<Base, dtype1, dtype2, dtype3, dtype4>::Register( \
+      ofxMTVideoInput::Registry<Base, dtype1, dtype2, dtype3, dtype4>::Register( \
           Identifier, \
           REGISTRY_CTOR(Base, Derived, \
               REGISTRY_CONCAT(dtype1 REGISTRY_SPACE arg1, \

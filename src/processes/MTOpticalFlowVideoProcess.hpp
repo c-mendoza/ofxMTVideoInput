@@ -21,7 +21,7 @@ class MTOpticalFlowVideoProcess : public MTVideoProcess
 
 public:
 
-	explicit MTOpticalFlowVideoProcess(std::string name);
+	explicit MTOpticalFlowVideoProcess();
 
 	virtual ~MTOpticalFlowVideoProcess()
 	{}
@@ -71,7 +71,5 @@ private:
 
 
 };
-
-REGISTER_SUBCLASS(MTVideoProcess, MTOpticalFlowVideoProcess, std::string)
 
 #endif /* NSOpticalFlowVideoProcess_hpp */

@@ -414,7 +414,7 @@ void MTVideoProcessStream::loadFromSerializer(ofXml& serializer)
 		string name = processXml.getName();
 		if (auto typenameXml = processXml.getChild("Process_Type_Name"))
 		{
-			std::shared_ptr<MTVideoProcess> process = ofxMTVideoInput::mtCreateVideoProcess(typenameXml.getValue(), name);
+			std::shared_ptr<MTVideoProcess> process = ofxMTVideoInput::mtCreateVideoProcess(typenameXml.getValue());
 			if (process != nullptr)
 			{
 				addVideoProcess(process);

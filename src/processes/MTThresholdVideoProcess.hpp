@@ -14,15 +14,13 @@ class MTThresholdVideoProcess : public MTVideoProcess
 public:
 	ofParameter<int> threshold;
 
-	MTThresholdVideoProcess(std::string name);
+	MTThresholdVideoProcess();
 	MTProcessData& process(MTProcessData& input) override;
 	std::unique_ptr<MTVideoProcessUI> createUI() override;
 
 protected:
 
 };
-
-REGISTER_SUBCLASS(MTVideoProcess, MTThresholdVideoProcess, std::string)
 
 class MTThresholdVideoProcessUI : public MTVideoProcessUI
 {
@@ -37,4 +35,4 @@ protected:
 
 };
 
-#endif //NERVOUSSTRUCTUREOF_MTCOMMONPROCESSES_HPP
+#endif
