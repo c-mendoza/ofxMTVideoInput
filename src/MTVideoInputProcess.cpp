@@ -4,7 +4,7 @@
 
 #include "MTVideoInputProcess.hpp"
 
-MTVideoInputProcess::MTVideoInputProcess(const std::string& name) : MTVideoProcess(name)
+MTVideoInputProcess::MTVideoInputProcess(const std::string& name) : MTVideoProcess(name, "MTVideoInputProcess")
 {}
 
 MTProcessData& MTVideoInputProcess::process(MTProcessData& input)

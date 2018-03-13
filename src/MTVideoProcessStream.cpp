@@ -85,8 +85,8 @@ void MTVideoProcessStream::threadedFunction()
 			}
 
 			processData.clear();
-			processData[MTVideoProcessSourceKey] = videoInputImage;
-			processData[MTVideoProcessStreamKey] = workingImage;
+			processData.processSource = videoInputImage;
+			processData.processStream = workingImage;
 			for (auto p : videoProcesses)
 			{
 				processData = p->process(processData);
@@ -336,21 +336,37 @@ void MTVideoProcessStream::videoFilePathChanged(std::string& newPath)
 
 void MTVideoProcessStream::addVideoProcess(std::shared_ptr<MTVideoProcess> process)
 {
+	addVideoProcessAtIndex(process, videoProcesses.size());
+}
+
+void MTVideoProcessStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, unsigned long index)
+{
 	lock();
-	videoProcesses.push_back(process);
+	videoProcesses.insert(videoProcesses.begin() + index, process);
 //	if (ofStringTimesInString(process->getName(), "_") < 1)
 //	{
 //		process->setName(process->getName() + "_" + ofToString(videoProcesses.size()));
 //	}
-	processesParameters.add(process->getParameters());
+	processesParameters.addAt(process->getParameters(), index);
 	process->processStream = shared_from_this();
+	processAddedEvent.notify(this, process);
 	unlock();
 }
 
-std::shared_ptr<MTVideoProcess> MTVideoProcessStream::getVideoProcessAtIndex(int index)
+void MTVideoProcessStream::swapProcesses(size_t index1, size_t index2)
+{
+	lock();
+	std::swap(videoProcesses.at(index1), videoProcesses.at(index2));
+	processesParameters.swapPositions(index1, index2);
+	processOrderChangedEvent.notify(this);
+	unlock();
+}
+
+std::shared_ptr<MTVideoProcess> MTVideoProcessStream::getVideoProcessAtIndex(unsigned long index)
 {
 	return videoProcesses[index];
 }
+
 
 std::shared_ptr<MTVideoProcess> MTVideoProcessStream::getProcessWithName(std::string name)
 {
@@ -369,6 +385,38 @@ int MTVideoProcessStream::getVideoProcessCount()
 {
 	return videoProcesses.size();
 }
+
+
+bool MTVideoProcessStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> process)
+{
+	auto iter = std::find(videoProcesses.begin(), videoProcesses.end(), process);
+	if (iter != videoProcesses.end())
+	{
+		videoProcesses.erase(iter);
+		processRemovedEvent.notify(this, process);
+		return true;
+	}
+	return false;
+}
+
+bool MTVideoProcessStream::removeVideoProcessAtIndex(int index)
+{
+	if (index < videoProcesses.size())
+	{
+		auto process = videoProcesses[index];
+		videoProcesses.erase(videoProcesses.begin() + index);
+		processRemovedEvent.notify(this, process);
+		return true;
+	}
+	return false;
+}
+
+void MTVideoProcessStream::removeAllVideoProcesses()
+{
+	videoProcesses.clear();
+}
+
+
 
 #pragma mark OVERRIDES
 //////////////////////////////////
@@ -523,4 +571,3 @@ void MTVideoProcessStream::updateTransformInternals()
 	outputRegionString = MTApp::pathToString(*outputRegion.get());
 	inputROIString = MTApp::pathToString(*inputROI.get());
 }
-

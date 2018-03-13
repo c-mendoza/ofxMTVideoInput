@@ -4,11 +4,11 @@
 #include "MTVideoProcess.hpp"
 #include "MTVideoProcessUI.hpp"
 
-MTVideoProcess::MTVideoProcess(std::string name) : MTModel(name)
+MTVideoProcess::MTVideoProcess(std::string name, std::string typeName) : MTModel(name)
 {
-	processTypeName.set("Process Type Name", typeid(this).name());
-//	useTransform.set("Use Transform", false);
+	processTypeName.set("Process Type Name", typeName);
 	parameters.add(processTypeName);
+//	useTransform.set("Use Transform", false);
 //	processBuffer = cv::Mat
 };
 

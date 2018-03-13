@@ -49,6 +49,9 @@ public:
 	///when listening for the event!
 	ofFastEvent<MTVideoProcessFastEventArgs<MTVideoProcessStream>> processStreamCompleteFastEvent;
 	ofEvent<MTVideoProcessEventArgs<MTVideoProcessStream>> processStreamCompleteEvent;
+	ofEvent<std::shared_ptr<MTVideoProcess>> processAddedEvent;
+	ofEvent<std::shared_ptr<MTVideoProcess>> processRemovedEvent;
+	ofEvent<void> processOrderChangedEvent;
 
 	//////////////////////////////////
 	//Video
@@ -90,10 +93,11 @@ public:
 	//Data Handling
 	//////////////////////////////////
 	void addVideoProcess(std::shared_ptr<MTVideoProcess> process);
-	void addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, int index);
+	void addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, unsigned long index);
+	void swapProcesses(size_t index1, size_t index2);
 	bool removeVideoProcess(std::shared_ptr<MTVideoProcess> process);
 	bool removeVideoProcessAtIndex(int index);
-	std::shared_ptr<MTVideoProcess> getVideoProcessAtIndex(int index);
+	std::shared_ptr<MTVideoProcess> getVideoProcessAtIndex(unsigned long index);
 	std::shared_ptr<MTVideoProcess> getProcessWithName(std::string name);
 	int getVideoProcessCount();
 	void removeAllVideoProcesses();
@@ -173,6 +177,44 @@ protected:
 	ofVideoPlayer videoPlayer;
 
 	bool initializeVideoCapture();
+};
+
+struct MTProcessData
+{
+	/**
+	 * @brief The Mat that is being modified and passed to subsequent processes as the data
+	 * runs through the stream. This should be your basic input/output source and destination.
+	 */
+	cv::Mat processStream;
+	/**
+	 * @brief The result of a process. In most cases processStream should be the same as processResult,
+	 * but this Mat is useful to pass along a result that you might not want to end up in the stream if you want
+	 * to continue processing the video data. For example, the output of optical flow is not necessarily
+	 * useful for subsequent video processes, so you might want to publish that output in processResult, and pass
+	 * along any video in processStream.
+	 */
+	cv::Mat processResult;
+	/**
+	 * @brief The source pixels of the stream, i.e. the video pixels. You shouldn't modify this Mat.
+	 */
+	cv::Mat processSource;
+	/**
+	 * @brief A convenience Mat to store a mask. Completely optional.
+	 */
+	cv::Mat processMask;
+	/**
+	 * @brief An unordered_map for any custom Mat's that you may want to use in your own processes.
+	 */
+	std::unordered_map<std::string, cv::Mat> user;
+
+	void clear()
+	{
+		using namespace cv;
+		processStream =  Mat();
+		processResult = Mat();
+		processSource = Mat();
+		processMask = Mat();
+	}
 };
 
 #endif /* NSVideoProcessChain_hpp */

@@ -15,24 +15,18 @@ public:
 	ofParameter<int> threshold;
 
 	MTThresholdVideoProcess();
-	MTProcessData& process(MTProcessData& input) override;
+	MTProcessData& process(MTProcessData& processData) override;
 	std::unique_ptr<MTVideoProcessUI> createUI() override;
 
 protected:
 
 };
 
-class MTThresholdVideoProcessUI : public MTVideoProcessUI
+class MTThresholdVideoProcessUI : public MTVideoProcessUIWithImage
 {
 public:
-	MTThresholdVideoProcessUI(const std::shared_ptr <MTVideoProcess>& videoProcess);
-	~MTThresholdVideoProcessUI() override;
+	MTThresholdVideoProcessUI(const std::shared_ptr <MTVideoProcess>& videoProcess, ofImageType imageType);
 	void draw(ofxImGui::Settings& settings) override;
-
-protected:
-	ofImage processImage;
-	ofThreadChannel<ofPixels> outputChannel;
-
 };
 
 #endif

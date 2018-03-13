@@ -6,6 +6,7 @@
 //
 //
 
+#include <MTVideoProcessStream.hpp>
 #include "processes/MTOpticalFlowVideoProcess.hpp"
 
 void MTOpticalFlowVideoProcess::notifyEvents()
@@ -18,7 +19,7 @@ void MTOpticalFlowVideoProcess::notifyEvents()
 }
 
 MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess() :
-        MTVideoProcess("Optical Flow")
+        MTVideoProcess("Optical Flow", "MTOpticalFlowVideoProcess")
 {
 	parameters.add(usefb.set("Use Farneback", true));
 	parameters.add(fbPyrScale.set("fbPyrScale", .5, 0, .99));
@@ -53,9 +54,9 @@ MTProcessData& MTOpticalFlowVideoProcess::process(MTProcessData& processData)
 	}
 
 	// you can use Flow polymorphically
-	curFlow->calcOpticalFlow(processData.at(MTVideoProcessStreamKey));
+	curFlow->calcOpticalFlow(processData.processStream);
 	processOutput = fb.getFlow();
-	processData[MTVideoProcessResultKey] = processOutput;
+	processData.processResult = processOutput;
 	return processData;
 
 }
@@ -65,7 +66,3 @@ ofVec2f MTOpticalFlowVideoProcess::getFlowPosition(int x, int y)
 	return fb.getFlow().at<ofVec2f>(y, x);
 }
 
-void MTOpticalFlowVideoProcess::drawGui(ofxImGui::Settings& settings)
-{
-    ofxImGui::AddGroup(getParameters(), settings);
-}

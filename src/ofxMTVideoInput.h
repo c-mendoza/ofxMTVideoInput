@@ -15,7 +15,7 @@
 
 namespace ofxMTVideoInput
 {
-
+	static std::vector<std::string> processNames;
 	/**
 	 * @brief Instantiates a process from the registry.
 	 * @param processTypename The type name of the process.
@@ -24,7 +24,7 @@ namespace ofxMTVideoInput
 	 * @return a shared_ptr<MTVideoProcess> if the type name was found in the registry, or
 	 * nullptr if the video process could not be instantiated.
 	 */
-	std::shared_ptr<MTVideoProcess> mtCreateVideoProcess(std::string processTypename)
+	static std::shared_ptr<MTVideoProcess> mtCreateVideoProcess(std::string processTypename)
 	{
 		return shared_ptr<MTVideoProcess>(
 				Registry<MTVideoProcess>::Create(processTypename));

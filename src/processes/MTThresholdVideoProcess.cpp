@@ -12,24 +12,32 @@
 /// THRESHOLD
 ///////////////////////////////////
 
-MTThresholdVideoProcess::MTThresholdVideoProcess() : MTVideoProcess("Threshold")
+MTThresholdVideoProcess::MTThresholdVideoProcess() : MTVideoProcess("Threshold", "MTThresholdVideoProcess")
 {
 	parameters.add(threshold.set("Threshold", 127, 0, 255));
 }
 
-MTProcessData& MTThresholdVideoProcess::process(MTProcessData& input)
+MTProcessData& MTThresholdVideoProcess::process(MTProcessData& processData)
 {
-	cv::cvtColor(input.at(MTVideoProcessStreamKey), processBuffer, cv::COLOR_BGR2GRAY);
+	auto& streamBuffer = processData.processStream;
+	if (streamBuffer.channels() >= 3)
+	{
+		cv::cvtColor(streamBuffer, processBuffer, cv::COLOR_BGR2GRAY);
+	}
+	else
+	{
+		processBuffer = streamBuffer;
+	}
 	cv::threshold(processBuffer, processOutput, threshold.get(), threshold.getMax(),
 				  CV_THRESH_BINARY);
-	input[MTVideoProcessStreamKey] = processOutput;
-	input[MTVideoProcessResultKey] = processOutput;
-	return input;
+	processData.processStream = processOutput;
+	processData.processResult = processOutput;
+	return processData;
 }
 
 std::unique_ptr<MTVideoProcessUI> MTThresholdVideoProcess::createUI()
 {
-	videoProcessUI = std::make_unique<MTThresholdVideoProcessUI>(shared_from_this());
+	videoProcessUI = std::make_unique<MTThresholdVideoProcessUI>(shared_from_this(), OF_IMAGE_GRAYSCALE);
 	return std::move(videoProcessUI);
 }
 
@@ -38,35 +46,22 @@ std::unique_ptr<MTVideoProcessUI> MTThresholdVideoProcess::createUI()
 /// THRESHOLD UI
 ///////////////////////////////////
 
-MTThresholdVideoProcessUI::MTThresholdVideoProcessUI(const std::shared_ptr<MTVideoProcess>& videoProcess)
-		: MTVideoProcessUI(videoProcess)
+MTThresholdVideoProcessUI::MTThresholdVideoProcessUI(const std::shared_ptr<MTVideoProcess>& videoProcess,
+													 ofImageType imageType) : MTVideoProcessUIWithImage(videoProcess,
+																										imageType)
 {
-	auto stream = videoProcess->processStream.lock();
-	processImage.allocate(stream->processWidth, stream->processHeight, OF_IMAGE_GRAYSCALE);
-	addEventListener(videoProcess->processCompleteFastEvent.newListener([this](
-			const MTVideoProcessFastEventArgs<MTVideoProcess>& args)
-																		{
-																			ofPixels pixels;
-																			ofxCv::toOf(args.processOutput, pixels);
-																			outputChannel.send(std::move(pixels));
-																		}));
-}
 
-MTThresholdVideoProcessUI::~MTThresholdVideoProcessUI()
-{
-	outputChannel.close();
 }
 
 void MTThresholdVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
-	ofPixels pixels;
-	while (outputChannel.tryReceive(pixels))
+	auto vp = videoProcess.lock();
+	ofxImGui::BeginTree(vp->getName(), settings);
+	MTVideoProcessUIWithImage::draw(settings);
+	for (auto& param : vp->getParameters())
 	{
-//		ofxCv::toOf(processOutput, processImage);
-		processImage.setFromPixels(pixels);
+		ofxImGui::AddParameter(param);
 	}
-	ofxImGui::AddImage(processImage, glm::vec2(320, 240));
-//	ImGui::SameLine();
-	MTVideoProcessUI::draw(settings);
+	ofxImGui::EndTree(settings);
 }
 

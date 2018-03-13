@@ -2,11 +2,13 @@
 // Created by Cristobal Mendoza on 3/6/18.
 //
 
+#include <MTVideoProcessStream.hpp>
 #include "MTImageAdjustmentsVideoProcess.hpp"
 
 #pragma mark Process
 
-MTImageAdjustmentsVideoProcess::MTImageAdjustmentsVideoProcess() : MTVideoProcess("Image Adjustments")
+MTImageAdjustmentsVideoProcess::MTImageAdjustmentsVideoProcess() : MTVideoProcess("Image Adjustments",
+																				  "MTImageAdjustmentsVideoProcess")
 {
 	gammaLUT = cv::Mat(1, 256, CV_8U);
 	bcLUT = cv::Mat(1, 256, CV_8U);
@@ -22,21 +24,21 @@ MTImageAdjustmentsVideoProcess::MTImageAdjustmentsVideoProcess() : MTVideoProces
 				   contrast.set("Contrast", 0, -1, 1));
 	addEventListener(gamma.newListener([this](float args)
 									   {
-										   updateGammaLUT();
+										   gammaNeedsUpdate = true;
 									   }));
 	addEventListener(brightness.newListener([this](float args)
-									   {
-										   updateBC();
-									   }));
+											{
+												bcNeedsUpdate = true;
+											}));
 	addEventListener(contrast.newListener([this](float args)
-									   {
-										   updateBC();
-									   }));
+										  {
+											  bcNeedsUpdate = true;
+										  }));
 	addEventListener(useCLAHE.newListener([this](bool args)
 										  {
 											  if (args)
 											  {
-												  updateCLAHE();
+												  claheNeedsUpdate = true;
 												  useHistogramEqualization.setWithoutEventNotifications(false);
 											  }
 										  }));
@@ -48,9 +50,9 @@ MTImageAdjustmentsVideoProcess::MTImageAdjustmentsVideoProcess() : MTVideoProces
 															  }
 														  }));
 	addEventListener(claheClipLimit.newListener([this](float args)
-										  {
-											  updateCLAHE();
-										  }));
+												{
+													claheNeedsUpdate = true;
+												}));
 
 }
 
@@ -59,39 +61,55 @@ void MTImageAdjustmentsVideoProcess::setup()
 	MTVideoProcess::setup();
 }
 
-MTProcessData& MTImageAdjustmentsVideoProcess::process(MTProcessData& input)
+MTProcessData& MTImageAdjustmentsVideoProcess::process(MTProcessData& processData)
 {
 	bool flagChanged = false;
 
-	if (input[MTVideoProcessStreamKey].type() != CV_8UC1)
+	if (processData.processStream.type() != CV_8UC1)
 	{
-		cv::cvtColor(input[MTVideoProcessStreamKey], processBuffer, CV_RGB2GRAY);
-		input[MTVideoProcessStreamKey] = processBuffer;
+		cv::cvtColor(processData.processStream, processBuffer, CV_RGB2GRAY);
+		processData.processStream = processBuffer;
 		flagChanged = true;
 	}
 
 
 	if (useHistogramEqualization)
 	{
-		cv::equalizeHist(input[MTVideoProcessStreamKey], processBuffer);
-		input[MTVideoProcessStreamKey] = processBuffer;
+		cv::equalizeHist(processData.processStream, processBuffer);
+		processData.processStream = processBuffer;
 	}
 	else if (useCLAHE)
 	{
-		clahe->apply(input[MTVideoProcessStreamKey], processBuffer);
-		input[MTVideoProcessStreamKey] = processBuffer;
+		// For thread safety clahe needs to be updated in this thread
+		if (claheNeedsUpdate)
+		{
+			updateCLAHE();
+			claheNeedsUpdate = false;
+		}
+		clahe->apply(processData.processStream, processBuffer);
+		processData.processStream = processBuffer;
 		flagChanged = true;
 	}
 
 
 	if (gamma != 1)
 	{
-		cv::LUT(input[MTVideoProcessStreamKey], gammaLUT, processBuffer);
+		if (gammaNeedsUpdate)
+		{
+			updateGammaLUT();
+			gammaNeedsUpdate = false;
+		}
+		cv::LUT(processData.processStream, gammaLUT, processBuffer);
 		flagChanged = true;
 	}
 
 	if (brightness != 0 || contrast != 0)
 	{
+		if (bcNeedsUpdate)
+		{
+			updateBC();
+			bcNeedsUpdate = false;
+		}
 		cv::LUT(processBuffer, bcLUT, processBuffer);
 		flagChanged = true;
 	}
@@ -99,14 +117,14 @@ MTProcessData& MTImageAdjustmentsVideoProcess::process(MTProcessData& input)
 	if (flagChanged)
 	{
 		processOutput = processBuffer;
-		input[MTVideoProcessStreamKey] = processOutput;
-		input[MTVideoProcessResultKey] = processOutput;
+		processData.processStream = processOutput;
+		processData.processResult = processOutput;
 	}
 	else
 	{
-		processOutput = input[MTVideoProcessStreamKey];
+		processOutput = processData.processStream;
 	}
-	return input;
+	return processData;
 }
 
 std::unique_ptr<MTVideoProcessUI> MTImageAdjustmentsVideoProcess::createUI()
@@ -133,7 +151,7 @@ void MTImageAdjustmentsVideoProcess::updateBC()
 	uchar* p = bcLUT.ptr();
 	for (int i = 0; i < 256; ++i)
 	{
-		p[i] = cv::saturate_cast<uchar>( (realContrast * i) + realBrightness);
+		p[i] = cv::saturate_cast<uchar>((realContrast * i) + realBrightness);
 	}
 }
 

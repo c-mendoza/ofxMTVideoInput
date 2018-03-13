@@ -11,7 +11,7 @@
 ///////////////////////////////////
 
 MTBackgroundSubstractionVideoProcess::MTBackgroundSubstractionVideoProcess() :
-		MTVideoProcess("Background Substraction")
+		MTVideoProcess("Background Substraction", "MTBackgroundSubstractionVideoProcess")
 {
 	setup();
 }
@@ -21,14 +21,14 @@ void MTBackgroundSubstractionVideoProcess::setup()
 	bSub = cv::createBackgroundSubtractorMOG2();
 }
 
-MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& input)
+MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& processData)
 {
-	bSub->apply(input.at(MTVideoProcessStreamKey), processOutput);
-	cv::threshold(processOutput, processOutput, 200, 255, cv::THRESH_BINARY);
-	input.at(MTVideoProcessStreamKey).copyTo(input.at(MTVideoProcessStreamKey), processOutput);
-	input[MTVideoProcessResultKey] = input.at(MTVideoProcessStreamKey);
-	input[MTVideoProcessMaskKey] = processOutput;
-	return input;
+	bSub->apply(processData.processStream, processOutput);
+//	cv::threshold(processBuffer, processOutput, 200, 255, cv::THRESH_BINARY);
+//	input.at(MTVideoProcessStreamKey).copyTo(input.at(MTVideoProcessStreamKey), processOutput);
+	processData.processResult = processOutput;
+	processData.processMask = processOutput;
+	return processData;
 }
 
 std::unique_ptr<MTVideoProcessUI> MTBackgroundSubstractionVideoProcess::createUI()

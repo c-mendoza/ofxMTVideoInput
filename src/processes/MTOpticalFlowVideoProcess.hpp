@@ -49,7 +49,7 @@ public:
 	void notifyEvents() override;
 
 //	std::shared_ptr<MTVideoProcessUI> createUI() override;
-	void drawGui(ofxImGui::Settings& settings) override;
+//	void drawGui(ofxImGui::Settings& settings) override;
 //	virtual void loadFromSerializer(ofXml& serializer);
 //	virtual void saveWithSerializer(ofXml& serializer);
 

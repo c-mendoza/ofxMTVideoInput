@@ -25,13 +25,16 @@ public:
 
 	MTImageAdjustmentsVideoProcess();
 	void setup() override;
-	MTProcessData& process(MTProcessData& input) override;
+	MTProcessData& process(MTProcessData& processData) override;
 	std::unique_ptr<MTVideoProcessUI> createUI() override;
 
 protected:
 	cv::Mat gammaLUT;
 	cv::Mat bcLUT;
 	cv::Ptr<cv::CLAHE> clahe;
+	bool gammaNeedsUpdate = false;
+	bool bcNeedsUpdate = false;
+	bool claheNeedsUpdate = false;
 	void updateGammaLUT();
 	void updateBC();
 	void updateCLAHE();

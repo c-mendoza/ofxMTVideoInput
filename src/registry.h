@@ -61,7 +61,8 @@
 #include <string>
 #include <unordered_map>
 
-namespace ofxMTVideoInput {
+namespace ofxMTVideoInput
+{
 
 // Utility macros
 #define REGISTRY_SPACE
@@ -81,7 +82,7 @@ namespace ofxMTVideoInput {
 
 #define REGISTRY_CTOR(Base, Derived, params, param_names) \
   [](params) -> Base* { return new Derived(param_names); }
-    
+
 #define REGISTER_SUBCLASS0(Base, Derived, Identifier) \
   static bool _registered_##Derived = \
       ofxMTVideoInput::Registry<Base>::Register(Identifier, \
@@ -122,44 +123,73 @@ namespace ofxMTVideoInput {
                               dtype4 REGISTRY_SPACE arg4), \
               REGISTRY_CONCAT(arg1, arg2, arg3, arg4)));
 
-template<typename T, typename ... Pack>
-class Registry {
- public:
-  using ctor_t = std::function<T*(Pack...)>;
-  using map_t = std::unordered_map<std::string, ctor_t>;
+	template<typename T, typename ... Pack>
+	class Registry
+	{
+	public:
+		using ctor_t = std::function<T*(Pack...)>;
+		using map_t = std::unordered_map<std::string, ctor_t>;
 
-  template<typename ... Args>
-  static T* Create(const std::string& class_name, Args && ... pack) {
-    if (ctors().count(class_name) == 1) {
-      return ctors()[class_name](std::forward<Args>(pack)...);
-    }
-    std::cerr << "Class " << class_name << " not registered." << std::endl;
-    return nullptr;
-  }
+		template<typename ... Args>
+		static T* Create(const std::string& class_name, Args&& ... pack)
+		{
+			if (ctors().count(class_name) == 1)
+			{
+				return ctors()[class_name](std::forward<Args>(pack)...);
+			}
+			std::cerr << "Class " << class_name << " not registered." << std::endl;
+			return nullptr;
+		}
 
-  static bool Register(const std::string& class_name, const ctor_t& ctor) {
-    ctors()[class_name] = ctor;
-    return true;
-  }
+		static bool Register(const std::string& class_name, const ctor_t& ctor)
+		{
+			ctors()[class_name] = ctor;
+			updateNamesVector();
+			return true;
+		}
 
-  static bool IsRegistered(const std::string& class_name) {
-    return ctors().count(class_name) == 1;
-  }
+		static bool IsRegistered(const std::string& class_name)
+		{
+			return ctors().count(class_name) == 1;
+		}
 
-  static void Unregister(const std::string& class_name) {
-    ctors().erase(class_name);
-  }
+		static void Unregister(const std::string& class_name)
+		{
+			ctors().erase(class_name);
+			updateNamesVector();
+		}
 
- private:
-  static map_t& ctors() {
-    static map_t ctor_map;
-    return ctor_map;
-  }
+		static std::vector<std::string>& GetNames()
+		{
+			return classNames();
+		}
 
-  Registry();
-  Registry(const Registry& other);
-  Registry& operator=(const Registry& other);
-};
+	private:
+		static map_t& ctors()
+		{
+			static map_t ctor_map;
+			return ctor_map;
+		}
+
+		static std::vector<std::string>& classNames()
+		{
+			static std::vector<std::string> classNamesVector;
+			return classNamesVector;
+		}
+
+		static void updateNamesVector()
+		{
+			classNames().clear();
+			for (auto& pair : ctors())
+			{
+				classNames().push_back(pair.first);
+			}
+		}
+
+		Registry();
+		Registry(const Registry& other);
+		Registry& operator=(const Registry& other);
+	};
 
 }
 

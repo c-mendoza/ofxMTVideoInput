@@ -18,7 +18,7 @@
 //#include "ofxMTApp.hpp"
 
 class MTVideoProcessStream;
-
+class MTProcessData;
 class MTVideoProcess;
 class MTVideoProcessUI;
 
@@ -30,7 +30,7 @@ class MTVideoProcessUI;
  * @tparam T The process type
  */
 template<typename T>
-class MTVideoProcessEventArgs
+class MTVideoProcessEventArgs : public ofEventArgs
 {  //TODO: ProcessEventArgs vs. ProcessFastEventArgs!
 public:
 	cv::Mat processOutput;
@@ -52,7 +52,7 @@ public:
  * behavior.
  */
 template<typename T>
-class MTVideoProcessFastEventArgs
+class MTVideoProcessFastEventArgs : public ofEventArgs
 {
 public:
 	cv::Mat processOutput;
@@ -65,11 +65,6 @@ public:
 	}
 };
 
-typedef std::unordered_map<std::string, cv::Mat> MTProcessData;
-static const std::string MTVideoProcessStreamKey = "MTVideoProcessStreamKey";
-static const std::string MTVideoProcessResultKey = "MTVideoProcessResultKey";
-static const std::string MTVideoProcessSourceKey = "MTVideoProcessSourceKey";
-static const std::string MTVideoProcessMaskKey = "MTVideoProcessMaskKey";
 
 class MTVideoProcess : public MTModel,
 					   public std::enable_shared_from_this<MTVideoProcess>
@@ -77,12 +72,18 @@ class MTVideoProcess : public MTModel,
 public:
 
 	ofParameter<bool> useTransform;
-	ofReadOnlyParameter<std::string, MTVideoProcess> processTypeName;
+	ofParameter<std::string> processTypeName;
 	std::weak_ptr<MTVideoProcessStream> processStream;
 	ofFastEvent<MTVideoProcessFastEventArgs<MTVideoProcess>> processCompleteFastEvent;
 	ofEvent<MTVideoProcessEventArgs<MTVideoProcess>> processCompleteEvent;
 
-	MTVideoProcess(std::string name);
+	/**
+	 * @param name The friendly name for the process. It will be used as the identifier
+	 * in the ofParameterGroup
+	 * @param typeName The class name of the process in string format. It will be used by the
+	 * Registry to associate the class with the right constructor.
+	 */
+	MTVideoProcess(std::string name, std::string typeName);
 	~MTVideoProcess();
 
 //	virtual void loadFromSerializer(ofXml& serializer) = 0;
@@ -119,11 +120,6 @@ public:
 			ofNotifyEvent(processCompleteEvent, processEventArgs, this);
 		}
 
-	}
-
-	std::string getTypeName()
-	{
-		return processTypeName;
 	}
 
 protected:
