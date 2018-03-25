@@ -13,7 +13,27 @@
 MTBackgroundSubstractionVideoProcess::MTBackgroundSubstractionVideoProcess() :
 		MTVideoProcess("Background Substraction", "MTBackgroundSubstractionVideoProcess")
 {
+	parameters.add(threshold.set("Background Threshold", 16, 1, 46),
+				   history.set("History Length", 500, 100, 2000),
+				   detectShadows.set("Detect Shadows", true),
+				   substractStream.set("Substract background from Stream", false)
+	);
+
+	addEventListener(threshold.newListener([this](float& value)
+	{
+		updateParams = true;
+	}));
+	addEventListener(history.newListener([this](int& value)
+	{
+		updateParams = true;
+	}));
+	addEventListener(detectShadows.newListener([this](bool& value)
+	{
+		updateParams = true;
+	}));
 	setup();
+	
+
 }
 
 void MTBackgroundSubstractionVideoProcess::setup()
@@ -23,9 +43,27 @@ void MTBackgroundSubstractionVideoProcess::setup()
 
 MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& processData)
 {
-	bSub->apply(processData.processStream, processOutput);
+	if (updateParams)
+	{
+		bSub->setHistory(history);
+		bSub->setDetectShadows(detectShadows);
+		bSub->setVarThreshold(threshold);
+	}
+	bSub->apply(processData.processStream, processBuffer);
+	if (substractStream)
+	{
+		cv::subtract(processBuffer, processData.processStream, processOutput);
+	}
+	else
+	{
+		processOutput = processBuffer;
+	}
 //	cv::threshold(processBuffer, processOutput, 200, 255, cv::THRESH_BINARY);
 //	input.at(MTVideoProcessStreamKey).copyTo(input.at(MTVideoProcessStreamKey), processOutput);
+	if (substractStream)
+	{
+		processData.processStream = processOutput;
+	}
 	processData.processResult = processOutput;
 	processData.processMask = processOutput;
 	return processData;
@@ -51,6 +89,14 @@ MTBackgroundSubstractionVideoProcessUI(const std::shared_ptr<MTVideoProcess>& vi
 
 void MTBackgroundSubstractionVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
+	auto vp = videoProcess.lock();
+//	ImGui::PushID(vp.get());
+	ofxImGui::BeginTree(vp->getName(), settings);
 	MTVideoProcessUIWithImage::draw(settings);
-	MTVideoProcessUI::draw(settings);
+	for (auto& param : vp->getParameters())
+	{
+		ofxImGui::AddParameter(param);
+	}
+	ofxImGui::EndTree(settings);
+//	ImGui::PopID();
 }

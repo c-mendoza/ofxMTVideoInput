@@ -13,8 +13,10 @@
 class MTBackgroundSubstractionVideoProcess : public MTVideoProcess
 {
 public:
-	ofParameter<int> threshold;
-
+	ofParameter<float> threshold;
+	ofParameter<int> history;
+	ofParameter<bool> detectShadows;
+	ofParameter<bool> substractStream;
 	MTBackgroundSubstractionVideoProcess();
 	void setup() override;
 	MTProcessData& process(MTProcessData& processData) override;
@@ -22,8 +24,9 @@ public:
 	cv::Ptr<cv::BackgroundSubtractor> getBackgroundSubtractor() { return bSub; }
 
 protected:
-	cv::Ptr<cv::BackgroundSubtractor> bSub;
+	cv::Ptr<cv::BackgroundSubtractorMOG2> bSub;
 
+	bool updateParams = true;
 };
 
 #pragma mark UI
