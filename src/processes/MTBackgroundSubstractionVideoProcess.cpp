@@ -16,7 +16,7 @@ MTBackgroundSubstractionVideoProcess::MTBackgroundSubstractionVideoProcess() :
 	parameters.add(threshold.set("Background Threshold", 16, 1, 46),
 				   history.set("History Length", 500, 100, 2000),
 				   detectShadows.set("Detect Shadows", true),
-				   substractStream.set("Substract background from Stream", false)
+				   substractStream.set("Subtract background from Stream", false)
 	);
 
 	addEventListener(threshold.newListener([this](float& value)
