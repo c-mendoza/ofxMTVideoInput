@@ -72,6 +72,7 @@ class MTVideoProcess : public MTModel,
 public:
 
 	ofParameter<bool> useTransform;
+	ofParameter<bool> isActive;
 	ofParameter<std::string> processTypeName;
 	std::weak_ptr<MTVideoProcessStream> processStream;
 	ofFastEvent<MTVideoProcessFastEventArgs<MTVideoProcess>> processCompleteFastEvent;
