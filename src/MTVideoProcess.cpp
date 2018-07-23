@@ -9,12 +9,21 @@ MTVideoProcess::MTVideoProcess(std::string name, std::string typeName) : MTModel
 	processTypeName.set("Process Type Name", typeName);
 	isActive.set("Active", true);
 	parameters.add(processTypeName, isActive);
+	processWidth = 320;
+	processHeight = 240;
 //	useTransform.set("Use Transform", false);
 //	processBuffer = cv::Mat
 };
 
 MTVideoProcess::~MTVideoProcess()
 {}
+
+
+void MTVideoProcess::setup()
+{
+	processBuffer.create(processHeight, processWidth, CV_8UC1);
+	processOutput.create(processHeight, processWidth, CV_8UC1);
+}
 
 std::unique_ptr<MTVideoProcessUI> MTVideoProcess::createUI()
 {

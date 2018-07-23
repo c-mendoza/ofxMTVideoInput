@@ -6,14 +6,14 @@
 //
 //
 
-#include <MTVideoProcessStream.hpp>
+#include <MTVideoInputStream.hpp>
 #include "processes/MTOpticalFlowVideoProcess.hpp"
 
 void MTOpticalFlowVideoProcess::notifyEvents()
 {
 	MTVideoProcess::notifyEvents();
 	auto processEventArgs =
-            MTVideoProcessFastEventArgs<MTOpticalFlowVideoProcess>
+            MTVideoProcessCompleteFastEventArgs<MTOpticalFlowVideoProcess>
                     (processOutput, this);
 	ofNotifyEvent(opticalFlowProcessCompleteFastEvent, processEventArgs, this);
 }

@@ -43,14 +43,14 @@ public:
 	ofParameter<bool> usefb;
 	ofParameter<bool> useBackgroundSub;
 	ofParameter<bool> useThreshold;
-	ofFastEvent<MTVideoProcessFastEventArgs<MTOpticalFlowVideoProcess>> opticalFlowProcessCompleteFastEvent;
+	ofFastEvent<MTVideoProcessCompleteFastEventArgs<MTOpticalFlowVideoProcess>> opticalFlowProcessCompleteFastEvent;
 
 
 	void notifyEvents() override;
 
 //	std::shared_ptr<MTVideoProcessUI> createUI() override;
 //	void drawGui(ofxImGui::Settings& settings) override;
-//	virtual void loadFromSerializer(ofXml& serializer);
+//	virtual void deserialize(ofXml& serializer);
 //	virtual void saveWithSerializer(ofXml& serializer);
 
 	/**

@@ -17,26 +17,26 @@
 //#include "MTVideoProcessUI.hpp"
 //#include "ofxMTApp.hpp"
 
-class MTVideoProcessStream;
+class MTVideoInputStream;
 class MTProcessData;
 class MTVideoProcess;
 class MTVideoProcessUI;
 
 
 /**
- * @brief ProcessEventArgs clone (deep copy) the output of the process, making it "thread-safer".
+ * @brief ProcessCompleteEventArgs clone (deep copy) the output of the process, making it "thread-safer".
  * If you need to use the output of the process on a different timeline than that of
  * the ProcessChain, use this event.
  * @tparam T The process type
  */
 template<typename T>
-class MTVideoProcessEventArgs : public ofEventArgs
+class MTVideoProcessCompleteEventArgs : public ofEventArgs
 {  //TODO: ProcessEventArgs vs. ProcessFastEventArgs!
 public:
 	cv::Mat processOutput;
 	T* process;
 
-	MTVideoProcessEventArgs(cv::Mat& processOutput, T* process)
+	MTVideoProcessCompleteEventArgs(cv::Mat& processOutput, T* process)
 	{
 		this->processOutput = processOutput.clone();
 		this->process = process;
@@ -48,17 +48,17 @@ public:
  * they return the actual Mat that the process worked on. They are meant
  * for immediate read-only access to the data, sparing you from an unnecessary copy.
  * If you need a copy of the data you might want to use MTVideoProcessEventArgs instead.
- * Modifying the cv::Mat while in the middle of a VideoProcessStream may result in unexpected/invalid
+ * Modifying the cv::Mat while in the middle of a VideoInputStream may result in unexpected/invalid
  * behavior.
  */
 template<typename T>
-class MTVideoProcessFastEventArgs : public ofEventArgs
+class MTVideoProcessCompleteFastEventArgs : public ofEventArgs
 {
 public:
 	cv::Mat processOutput;
 	T* process;
 
-	MTVideoProcessFastEventArgs(cv::Mat& processOutput, T* process)
+	MTVideoProcessCompleteFastEventArgs(cv::Mat& processOutput, T* process)
 	{
 		this->processOutput = processOutput;
 		this->process = process;
@@ -74,9 +74,9 @@ public:
 	ofParameter<bool> useTransform;
 	ofParameter<bool> isActive;
 	ofParameter<std::string> processTypeName;
-	std::weak_ptr<MTVideoProcessStream> processStream;
-	ofFastEvent<MTVideoProcessFastEventArgs<MTVideoProcess>> processCompleteFastEvent;
-	ofEvent<MTVideoProcessEventArgs<MTVideoProcess>> processCompleteEvent;
+	std::weak_ptr<MTVideoInputStream> processStream;
+	ofFastEvent<MTVideoProcessCompleteFastEventArgs<MTVideoProcess>> processCompleteFastEvent;
+	ofEvent<MTVideoProcessCompleteEventArgs<MTVideoProcess>> processCompleteEvent;
 
 	/**
 	 * @param name The friendly name for the process. It will be used as the identifier
@@ -87,9 +87,9 @@ public:
 	MTVideoProcess(std::string name, std::string typeName);
 	~MTVideoProcess();
 
-//	virtual void loadFromSerializer(ofXml& serializer) = 0;
+//	virtual void deserialize(ofXml& serializer) = 0;
 //	virtual void saveWithSerializer(ofXml& serializer) = 0;
-	virtual void setup(){}
+	virtual void setup();
 
 	virtual MTProcessData& process(MTProcessData& input) = 0;
 	virtual std::unique_ptr<MTVideoProcessUI> createUI();
@@ -97,6 +97,7 @@ public:
 	{
 		processWidth = w;
 		processHeight = h;
+		setup();
 		//Do I call another function here? Or do I override?
 
 		//Should cv entities update in the "process" function?
@@ -111,13 +112,13 @@ public:
 
 	virtual void notifyEvents()
 	{
-		auto processEventFastArgs = MTVideoProcessFastEventArgs<MTVideoProcess>(processOutput, this);
+		auto processEventFastArgs = MTVideoProcessCompleteFastEventArgs<MTVideoProcess>(processOutput, this);
 		ofNotifyEvent(processCompleteFastEvent, processEventFastArgs, this);
 
 		// Only create the ProcessEventArgs if there is someone listening:
 		if (processCompleteEvent.size() > 0)
 		{
-			auto processEventArgs = MTVideoProcessEventArgs<MTVideoProcess>(processOutput, this);
+			auto processEventArgs = MTVideoProcessCompleteEventArgs<MTVideoProcess>(processOutput, this);
 			ofNotifyEvent(processCompleteEvent, processEventArgs, this);
 		}
 

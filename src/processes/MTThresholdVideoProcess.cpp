@@ -4,7 +4,7 @@
 
 #include "MTThresholdVideoProcess.hpp"
 #include "ofxCv.h"
-#include "MTVideoProcessStream.hpp"
+#include "MTVideoInputStream.hpp"
 
 #pragma mark Threshold
 
