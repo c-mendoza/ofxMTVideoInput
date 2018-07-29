@@ -18,8 +18,6 @@ std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(std::string name)
 	auto stream = std::make_shared<MTVideoInputStream>(name);
 	inputStreams.push_back(stream);
 	parameters.add(stream->getParameters());
-	stream->startStream();
-
 	// Fire addedVideoProcessStreamEvent
 	MTVideoInputStreamEventArgs args;
 	args.inputStream = stream;

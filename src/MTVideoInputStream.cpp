@@ -43,8 +43,8 @@ MTVideoInputStream::~MTVideoInputStream()
 {
 	closeStream();
 	//TODO:
-//	NSApp::sharedApp->getNSModel()->outputWidth.removeListener(this, &MTVideoInputStream::documentSizeChanged);
-//	NSApp::sharedApp->getNSModel()->outputHeight.removeListener(this, &MTVideoInputStream::documentSizeChanged);
+//	App::sharedApp->getNSModel()->outputWidth.removeListener(this, &MTVideoInputStream::documentSizeChanged);
+//	App::sharedApp->getNSModel()->outputHeight.removeListener(this, &MTVideoInputStream::documentSizeChanged);
 	processWidth.removeListener(this, &MTVideoInputStream::processSizeChanged);
 	processHeight.removeListener(this, &MTVideoInputStream::processSizeChanged);
 	videoInputDeviceID.removeListener(this, &MTVideoInputStream::videoDeviceIDChanged);
@@ -125,9 +125,9 @@ void MTVideoInputStream::setup()
 	workingImage.create(processHeight, processWidth, CV_8UC1);
 	processOutput.create(processHeight, processWidth, CV_8UC1);
 
-	if (outputRegion->getCommands().size() < 4)
+	if (outputRegion->getCommands().size() < 5)
 	{
-//        auto model = NSApp::sharedApp->getNSModel();
+//        auto model = App::sharedApp->getNSModel();
 		outputRegion->setMode(ofPath::COMMANDS);
 		outputRegion->clear();
 		outputRegion->moveTo(0, 0);
@@ -512,9 +512,9 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		inputROI->rectangle(0, 0, processWidth, processHeight);
 	}
 
+	updateTransformInternals();
+
 	//Add the listeners
-//    NSApp::sharedApp->getNSModel()->outputWidth.addListener(this, &MTVideoInputStream::documentSizeChanged);
-//    NSApp::sharedApp->getNSModel()->outputHeight.addListener(this, &MTVideoInputStream::documentSizeChanged);
 	processWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
 	processHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
 
