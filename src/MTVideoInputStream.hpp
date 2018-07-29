@@ -1,5 +1,5 @@
 //
-//  MTVideoProcessStream.hpp
+//  MTVideoInputStream.hpp
 //  Created by Cristobal Mendoza on 3/14/16.
 //
 //
@@ -12,14 +12,15 @@
 #include "ofxCv.h"
 #include "MTVideoProcess.hpp"
 
+class MTVideoInputStreamCompleteEventArgs;
 
-class MTVideoProcessStream : public MTModel,
-							 public ofThread,
-							 public std::enable_shared_from_this<MTVideoProcessStream>
+class MTVideoInputStream : public MTModel,
+						   public ofThread,
+						   public std::enable_shared_from_this<MTVideoInputStream>
 {
 public:
-	MTVideoProcessStream(std::string name);
-	~MTVideoProcessStream();
+	MTVideoInputStream(std::string name);
+	~MTVideoInputStream();
 
 	//ofReadonlyParameter does not serialize correctly!
 	ofParameter<bool> isRunning;
@@ -32,23 +33,38 @@ public:
 	//The pixel dimensions of the video process chain:
 	ofParameter<int> processWidth;
 	ofParameter<int> processHeight;
-	ofParameter<std::string> outputRegionString; //For serialization. Do not modify manually.
-	ofParameter<std::string> inputROIString; //For serialization Do not modify manually.
+	/**
+	 * For serialization. Do not modify manually.
+	 */
+	ofParameter<std::string> outputRegionString;
+	/**
+ 	* For serialization. Do not modify manually.
+ 	*/
+	ofParameter<std::string> inputROIString;
 	ofParameter<bool> useROI;
 	ofParameterGroup processesParameters;
 
+protected:
 	std::shared_ptr<ofPath> outputRegion;
 	std::shared_ptr<ofPath> inputROI;
 
+public:
 	std::vector<std::shared_ptr<MTVideoProcess>> videoProcesses;
 
 	//////////////////////////////////
-	//Event
+	/// Events
 	//////////////////////////////////
-	///This ofFastEvent is sent from the video process chain thread. Be aware of that
-	///when listening for the event!
-	ofFastEvent<MTVideoProcessFastEventArgs<MTVideoProcessStream>> processStreamCompleteFastEvent;
-	ofEvent<MTVideoProcessEventArgs<MTVideoProcessStream>> processStreamCompleteEvent;
+
+	/**
+	 * @brief Fires when the stream is done processing, i.e. when all of the
+	 * MTVideoProcess instances in the stream have completed.
+	 */
+	ofEvent<MTVideoInputStreamCompleteEventArgs> streamCompleteEvent;
+	/**
+	 * @brief Fires when the stream is done processing, i.e. when all of the
+	 * MTVideoProcess instances in the stream have completed.
+	 */
+	ofFastEvent<MTVideoInputStreamCompleteEventArgs> streamCompleteFastEvent;
 	ofEvent<std::shared_ptr<MTVideoProcess>> processAddedEvent;
 	ofEvent<std::shared_ptr<MTVideoProcess>> processRemovedEvent;
 	ofEvent<void> processOrderChangedEvent;
@@ -63,10 +79,15 @@ public:
 	ofParameter<int> videoInputDeviceID;
 
 	//////////////////////////////////
-	//Getters
+	//Getters and Setters
 	//////////////////////////////////
 	cv::Mat getProcessToWorldTransform();
 	cv::Mat getWorldToProcessTransform();
+
+	ofPath getInputROI();
+	ofPath getOutputRegion();
+	void setInputROI(ofPath path);
+	void setOutputRegion(ofPath path);
 
 	//////////////////////////////////
 	//Utility
@@ -77,6 +98,8 @@ protected:
 public:
 	double getFps()
 	{ return fpsCounter.getFps(); }
+
+
 //	///Transforms a point in process coordinates to world coordinates,
 //	///using the transformation values specified in the chain's processOut
 //	///members.
@@ -119,23 +142,23 @@ public:
 	//////////////////////////////////
 	//Class Overrides
 	//////////////////////////////////
-	virtual void loadFromSerializer(ofXml& serializer);
-//	virtual void saveWithSerializer(ofXml& serializer);
+	virtual void deserialize(ofXml& serializer);
+//	virtual void serialize(ofXml& serializer);
 	virtual void threadedFunction();
 
 	//////////////////////////////////
 	//Controller – ACTION
 	//////////////////////////////////
 	void setup();
-	void startChain();
+	void startStream();
 
 	/// Stops the processing thread. Blocks until thread exits.
-	void stopChain();
-	void setChainRunning(bool isRunning);
+	void stopStream();
+	void setStreamRunning(bool isRunning);
 
 	/// Stops processing thread and closes video devices.
 	/// This method blocks until the processing thread stops.
-	void closeChain();
+	void closeStream();
 
 	void updateTransformInternals();
 
@@ -210,11 +233,35 @@ struct MTProcessData
 	void clear()
 	{
 		using namespace cv;
-		processStream =  Mat();
+		processStream = Mat();
 		processResult = Mat();
 		processSource = Mat();
 		processMask = Mat();
 	}
+};
+
+
+class MTVideoInputStreamCompleteEventArgs : public ofEventArgs
+{
+public:
+	std::shared_ptr<MTVideoInputStream> stream;
+	/**
+	 * @brief The resulting Mat after all processing completes. The data in this Mat
+	 * is owned by the stream, so if you need to modify the data you must clone the Mat.
+	 */
+	cv::Mat result;
+	/**
+	 * @brief The initial Mat before processing. This will typically be
+	 * the unprocessed video input image. The data in this Mat
+	 * is owned by the stream, so if you need to modify the data you must clone the Mat.
+	 */
+	cv::Mat input;
+
+	/**
+	 * @brief The current frames per second reading of the stream.
+	 */
+	double fps;
+
 };
 
 #endif /* NSVideoProcessChain_hpp */

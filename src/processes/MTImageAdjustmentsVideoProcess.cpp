@@ -2,7 +2,7 @@
 // Created by Cristobal Mendoza on 3/6/18.
 //
 
-#include <MTVideoProcessStream.hpp>
+#include <MTVideoInputStream.hpp>
 #include "MTImageAdjustmentsVideoProcess.hpp"
 
 #pragma mark Process

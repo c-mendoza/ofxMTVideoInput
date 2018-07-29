@@ -5,7 +5,7 @@
 #include "MTVideoProcessUI.hpp"
 #include "MTVideoProcess.hpp"
 #include "ofThreadChannel.h"
-#include "MTVideoProcessStream.hpp"
+#include "MTVideoInputStream.hpp"
 
 MTVideoProcessUI::MTVideoProcessUI(std::shared_ptr<MTVideoProcess> videoProcess)
 {
@@ -24,7 +24,7 @@ MTVideoProcessUIWithImage(std::shared_ptr<MTVideoProcess> videoProcess,
 	auto stream = videoProcess->processStream.lock();
 	outputImage.allocate(stream->processWidth, stream->processHeight, imageType);
 	addEventListener(videoProcess->processCompleteFastEvent.newListener([this](
-			const MTVideoProcessFastEventArgs<MTVideoProcess>& args)
+			const MTVideoProcessCompleteFastEventArgs<MTVideoProcess>& args)
 																		{
 																			ofPixels pixels;
 																			ofxCv::toOf(args.processOutput, pixels);

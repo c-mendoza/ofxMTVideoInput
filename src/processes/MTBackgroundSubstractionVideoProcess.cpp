@@ -3,7 +3,7 @@
 //
 
 #include "MTBackgroundSubstractionVideoProcess.hpp"
-#include "MTVideoProcessStream.hpp"
+#include "MTVideoInputStream.hpp"
 
 #pragma mark Background Substraction
 
@@ -38,7 +38,9 @@ MTBackgroundSubstractionVideoProcess::MTBackgroundSubstractionVideoProcess() :
 
 void MTBackgroundSubstractionVideoProcess::setup()
 {
+	MTVideoProcess::setup();
 	bSub = cv::createBackgroundSubtractorMOG2();
+	updateParams = true;
 }
 
 MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& processData)
@@ -59,7 +61,7 @@ MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& proc
 		processOutput = processBuffer;
 	}
 //	cv::threshold(processBuffer, processOutput, 200, 255, cv::THRESH_BINARY);
-//	input.at(MTVideoProcessStreamKey).copyTo(input.at(MTVideoProcessStreamKey), processOutput);
+//	input.at(MTVideoInputStreamKey).copyTo(input.at(MTVideoInputStreamKey), processOutput);
 	if (substractStream)
 	{
 		processData.processStream = processOutput;

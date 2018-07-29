@@ -1,5 +1,5 @@
 //
-//  MTVideoProcessStream.cpp
+//  MTVideoInputStream.cpp
 //  nervousstructureof
 //
 //  Created by Cristobal Mendoza on 3/14/16.
@@ -12,7 +12,7 @@
 #include "MTApp.hpp"
 
 
-MTVideoProcessStream::MTVideoProcessStream(std::string name) : MTModel(name)
+MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 {
 	parameters.add(isRunning.set("Running", false),
 				   mirrorVideo.set("Mirror Video", true),
@@ -31,22 +31,25 @@ MTVideoProcessStream::MTVideoProcessStream(std::string name) : MTModel(name)
 
 	outputRegion = std::make_shared<ofPath>();
 	inputROI = std::make_shared<ofPath>();
+
+	// Add a default value for the inputROI:
+	inputROI->rectangle(0, 0, videoWidth, videoHeight);
 	isSetup = false;
 
 //	NSModel* m = MTApp::sharedApp->
 }
 
-MTVideoProcessStream::~MTVideoProcessStream()
+MTVideoInputStream::~MTVideoInputStream()
 {
-	closeChain();
+	closeStream();
 	//TODO:
-//	NSApp::sharedApp->getNSModel()->outputWidth.removeListener(this, &MTVideoProcessStream::documentSizeChanged);
-//	NSApp::sharedApp->getNSModel()->outputHeight.removeListener(this, &MTVideoProcessStream::documentSizeChanged);
-	processWidth.removeListener(this, &MTVideoProcessStream::processSizeChanged);
-	processHeight.removeListener(this, &MTVideoProcessStream::processSizeChanged);
-	videoInputDeviceID.removeListener(this, &MTVideoProcessStream::videoDeviceIDChanged);
-	useVideoPlayer.removeListener(this, &MTVideoProcessStream::videoPlayerStatusChanged);
-	videoFilePath.removeListener(this, &MTVideoProcessStream::videoFilePathChanged);
+//	App::sharedApp->getNSModel()->outputWidth.removeListener(this, &MTVideoInputStream::documentSizeChanged);
+//	App::sharedApp->getNSModel()->outputHeight.removeListener(this, &MTVideoInputStream::documentSizeChanged);
+	processWidth.removeListener(this, &MTVideoInputStream::processSizeChanged);
+	processHeight.removeListener(this, &MTVideoInputStream::processSizeChanged);
+	videoInputDeviceID.removeListener(this, &MTVideoInputStream::videoDeviceIDChanged);
+	useVideoPlayer.removeListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
+	videoFilePath.removeListener(this, &MTVideoInputStream::videoFilePathChanged);
 
 }
 
@@ -56,7 +59,7 @@ MTVideoProcessStream::~MTVideoProcessStream()
 //Thread
 //////////////////////////////////
 
-void MTVideoProcessStream::threadedFunction()
+void MTVideoInputStream::threadedFunction()
 {
 	setThreadName(this->getName());
 
@@ -94,20 +97,13 @@ void MTVideoProcessStream::threadedFunction()
 
 			}
 
-			auto streamFastEventArgs =
-					MTVideoProcessFastEventArgs<MTVideoProcessStream>
-							(workingImage, this);
-			ofNotifyEvent(processStreamCompleteFastEvent, streamFastEventArgs, this);
-
-			// Only make the ProcessEventArgs is someone is listening:
-			if (processStreamCompleteEvent.size() > 0)
-			{
-				auto streamEventArgs =
-						MTVideoProcessEventArgs<MTVideoProcessStream>
-								(workingImage, this);
-				ofNotifyEvent(processStreamCompleteEvent, streamEventArgs, this);
-
-			}
+			auto eventArgs = MTVideoInputStreamCompleteEventArgs();
+			eventArgs.stream = this->shared_from_this();
+			eventArgs.input = videoInputImage;
+			eventArgs.result = processData.processResult;
+			eventArgs.fps = fpsCounter.getFps();
+			streamCompleteFastEvent.notify(this, eventArgs);
+			streamCompleteEvent.notify(this, eventArgs);
 		}
 		else
 		{
@@ -124,14 +120,14 @@ void MTVideoProcessStream::threadedFunction()
 //Control
 //////////////////////////////////
 
-void MTVideoProcessStream::setup()
+void MTVideoInputStream::setup()
 {
 	workingImage.create(processHeight, processWidth, CV_8UC1);
 	processOutput.create(processHeight, processWidth, CV_8UC1);
 
-	if (outputRegion->getCommands().size() < 4)
+	if (outputRegion->getCommands().size() < 5)
 	{
-//        auto model = NSApp::sharedApp->getNSModel();
+//        auto model = App::sharedApp->getNSModel();
 		outputRegion->setMode(ofPath::COMMANDS);
 		outputRegion->clear();
 		outputRegion->moveTo(0, 0);
@@ -171,7 +167,7 @@ void MTVideoProcessStream::setup()
 	isSetup = true;
 }
 
-bool MTVideoProcessStream::initializeVideoCapture()
+bool MTVideoInputStream::initializeVideoCapture()
 {
 	auto devices = videoGrabber.listDevices();
 
@@ -198,53 +194,75 @@ bool MTVideoProcessStream::initializeVideoCapture()
 	return result;
 }
 
-void MTVideoProcessStream::startChain()
+void MTVideoInputStream::startStream()
 {
+	if (!isSetup) setup();
 	isRunning = true;
 	startThread();
 }
 
-void MTVideoProcessStream::stopChain()
+void MTVideoInputStream::stopStream()
 {
 	isRunning = false;
 	waitForThread(true, 100);
 }
 
-void MTVideoProcessStream::closeChain()
+void MTVideoInputStream::closeStream()
 {
-	stopChain();
+	stopStream();
 	videoGrabber.close();
 	videoPlayer.close();
 }
 
-void MTVideoProcessStream::setChainRunning(bool _isRunning)
+void MTVideoInputStream::setStreamRunning(bool _isRunning)
 {
 	isRunning = _isRunning;
-	if (isSetup)
+
+	if (isRunning)
 	{
-		if (isRunning)
-		{
-			startThread();
-		}
-		else
-		{
-			stopThread();
-		}
+		startStream();
 	}
 	else
 	{
-		ofLog(OF_LOG_WARNING, "Tried to run a process chain that was not set up");
+		stopStream();
 	}
+
 }
 
-cv::Mat MTVideoProcessStream::getProcessToWorldTransform()
+cv::Mat MTVideoInputStream::getProcessToWorldTransform()
 {
 	return processToWorldTransform;
 }
 
-cv::Mat MTVideoProcessStream::getWorldToProcessTransform()
+cv::Mat MTVideoInputStream::getWorldToProcessTransform()
 {
 	return worldToProcessTransform;
+}
+
+ofPath MTVideoInputStream::getInputROI()
+{
+	return *inputROI.get();
+}
+ofPath MTVideoInputStream::getOutputRegion()
+{
+	return *outputRegion.get();
+}
+
+void MTVideoInputStream::setInputROI(ofPath path)
+{
+	lock();
+	inputROI->clear();
+	inputROI->append(path);
+	updateTransformInternals();
+	unlock();
+}
+void MTVideoInputStream::setOutputRegion(ofPath path)
+{
+	lock();
+	outputRegion->clear();
+	outputRegion->append(path);
+	updateTransformInternals();
+	unlock();
 }
 
 #pragma mark UTILITY
@@ -252,7 +270,7 @@ cv::Mat MTVideoProcessStream::getWorldToProcessTransform()
 //Utility
 //////////////////////////////////
 
-void MTVideoProcessStream::setProcessingResolution(int w, int h)
+void MTVideoInputStream::setProcessingResolution(int w, int h)
 {
 	int bogus = 0;
 	lock();
@@ -269,7 +287,7 @@ void MTVideoProcessStream::setProcessingResolution(int w, int h)
 	processSizeChanged(bogus);
 }
 
-void MTVideoProcessStream::setCaptureResolution(int w, int h)
+void MTVideoInputStream::setCaptureResolution(int w, int h)
 {
 	videoWidth.setWithoutEventNotifications(w);
 	videoHeight.setWithoutEventNotifications(h);
@@ -283,7 +301,7 @@ void MTVideoProcessStream::setCaptureResolution(int w, int h)
 //////////////////////////////////
 
 
-void MTVideoProcessStream::processSizeChanged(int& changedValue)
+void MTVideoInputStream::processSizeChanged(int& changedValue)
 {
 	lock();
 	workingImage.create(processHeight, processWidth, CV_8UC1);
@@ -296,7 +314,7 @@ void MTVideoProcessStream::processSizeChanged(int& changedValue)
 	unlock();
 }
 
-void MTVideoProcessStream::videoDeviceIDChanged(int& unused)
+void MTVideoInputStream::videoDeviceIDChanged(int& unused)
 {
 	//for now:
 
@@ -315,14 +333,14 @@ void MTVideoProcessStream::videoDeviceIDChanged(int& unused)
 
 }
 
-void MTVideoProcessStream::videoPlayerStatusChanged(bool& unused)
+void MTVideoInputStream::videoPlayerStatusChanged(bool& unused)
 {
 	//for now:
 	isRunning = false;
 	isSetup = false;
 }
 
-void MTVideoProcessStream::videoFilePathChanged(std::string& newPath)
+void MTVideoInputStream::videoFilePathChanged(std::string& newPath)
 {
 	//for now:
 	isRunning = false;
@@ -334,12 +352,12 @@ void MTVideoProcessStream::videoFilePathChanged(std::string& newPath)
 //Data Handling
 //////////////////////////////////
 
-void MTVideoProcessStream::addVideoProcess(std::shared_ptr<MTVideoProcess> process)
+void MTVideoInputStream::addVideoProcess(std::shared_ptr<MTVideoProcess> process)
 {
 	addVideoProcessAtIndex(process, videoProcesses.size());
 }
 
-void MTVideoProcessStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, unsigned long index)
+void MTVideoInputStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, unsigned long index)
 {
 	lock();
 	videoProcesses.insert(videoProcesses.begin() + index, process);
@@ -353,22 +371,31 @@ void MTVideoProcessStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess
 	unlock();
 }
 
-void MTVideoProcessStream::swapProcesses(size_t index1, size_t index2)
+void MTVideoInputStream::swapProcesses(size_t index1, size_t index2)
 {
+	// Some basic error checking:
+	if (index1 >= videoProcesses.size() || index2 >= videoProcesses.size())
+	{
+		ofLogError(__FUNCTION__) << "Index out of range";
+		return;
+	}
+
 	lock();
+	videoProcesses.at(index1)->setup();
+	videoProcesses.at(index2)->setup();
 	std::swap(videoProcesses.at(index1), videoProcesses.at(index2));
 	processesParameters.swapPositions(index1, index2);
 	processOrderChangedEvent.notify(this);
 	unlock();
 }
 
-std::shared_ptr<MTVideoProcess> MTVideoProcessStream::getVideoProcessAtIndex(unsigned long index)
+std::shared_ptr<MTVideoProcess> MTVideoInputStream::getVideoProcessAtIndex(unsigned long index)
 {
 	return videoProcesses[index];
 }
 
 
-std::shared_ptr<MTVideoProcess> MTVideoProcessStream::getProcessWithName(std::string name)
+std::shared_ptr<MTVideoProcess> MTVideoInputStream::getProcessWithName(std::string name)
 {
 	for (auto vp : videoProcesses)
 	{
@@ -381,41 +408,36 @@ std::shared_ptr<MTVideoProcess> MTVideoProcessStream::getProcessWithName(std::st
 	return nullptr;
 }
 
-int MTVideoProcessStream::getVideoProcessCount()
+int MTVideoInputStream::getVideoProcessCount()
 {
 	return videoProcesses.size();
 }
 
 
-bool MTVideoProcessStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> process)
+bool MTVideoInputStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> process)
 {
+	lock();
 	auto iter = std::find(videoProcesses.begin(), videoProcesses.end(), process);
 	if (iter != videoProcesses.end())
 	{
 		videoProcesses.erase(iter);
 		processRemovedEvent.notify(this, process);
+		unlock();
 		return true;
 	}
+	unlock();
 	return false;
 }
 
-bool MTVideoProcessStream::removeVideoProcessAtIndex(int index)
+bool MTVideoInputStream::removeVideoProcessAtIndex(int index)
 {
-	if (index < videoProcesses.size())
-	{
-		auto process = videoProcesses[index];
-		videoProcesses.erase(videoProcesses.begin() + index);
-		processRemovedEvent.notify(this, process);
-		return true;
-	}
-	return false;
+	return removeVideoProcess(videoProcesses.at(index));
 }
 
-void MTVideoProcessStream::removeAllVideoProcesses()
+void MTVideoInputStream::removeAllVideoProcesses()
 {
 	videoProcesses.clear();
 }
-
 
 
 #pragma mark OVERRIDES
@@ -423,7 +445,7 @@ void MTVideoProcessStream::removeAllVideoProcesses()
 //Class Overrides
 //////////////////////////////////
 
-void MTVideoProcessStream::loadFromSerializer(ofXml& serializer)
+void MTVideoInputStream::deserialize(ofXml& serializer)
 {
 	if (isThreadRunning())
 	{
@@ -431,26 +453,20 @@ void MTVideoProcessStream::loadFromSerializer(ofXml& serializer)
 		waitForThread(false, INFINITE_JOIN_TIMEOUT);
 	}
 
-
-//	ofDeserialize(chainsXml, getParameters());
-	auto thisChainXml = serializer.findFirst("//Nervous_Structure/VideoProcessChains/" + getName());
+	auto thisChainXml = serializer.findFirst("//" + getName());
 	if (!thisChainXml)
 	{
 		ofLogError(__FUNCTION__) << "Could not find XML data for " + getName();
 		return;
 	}
 
-	// So ofDeserialize craps out on deeply nested parameter groups, so manually we must deserialize:
-	// My own deserialization function:
+	MTModel::deserialize(thisChainXml);
 
-	deserialize(thisChainXml);
-
-	auto processParamsXml = serializer.findFirst(
-			"//Nervous_Structure/VideoProcessChains/" + parameters.getEscapedName() + "/" + "Video_Processes");
+	auto processParamsXml = serializer.findFirst("//" + getName() + "/" + "Video_Processes");
 
 	if (!processParamsXml)
 	{
-		ofLogError() << "MTVideoProcessStream: Error loading video processes";
+		ofLogError() << "MTVideoInputStream: Error loading video processes";
 		return;
 	}
 
@@ -458,11 +474,11 @@ void MTVideoProcessStream::loadFromSerializer(ofXml& serializer)
 
 	for (auto& processXml : pChildren)
 	{
-
 		string name = processXml.getName();
 		if (auto typenameXml = processXml.getChild("Process_Type_Name"))
 		{
-			std::shared_ptr<MTVideoProcess> process = ofxMTVideoInput::mtCreateVideoProcess(typenameXml.getValue());
+			std::shared_ptr<MTVideoProcess> process = MTVideoInput::getInstance().createVideoProcess(
+					typenameXml.getValue());
 			if (process != nullptr)
 			{
 				addVideoProcess(process);
@@ -470,7 +486,7 @@ void MTVideoProcessStream::loadFromSerializer(ofXml& serializer)
 			}
 			else
 			{
-				ofLogError("MTVideoProcessStream") << "Could not find class " << typenameXml.getValue();
+				ofLogError("MTVideoInputStream") << "Could not find class " << typenameXml.getValue();
 			}
 		}
 	}
@@ -496,15 +512,15 @@ void MTVideoProcessStream::loadFromSerializer(ofXml& serializer)
 		inputROI->rectangle(0, 0, processWidth, processHeight);
 	}
 
-	//Add the listeners
-//    NSApp::sharedApp->getNSModel()->outputWidth.addListener(this, &MTVideoProcessStream::documentSizeChanged);
-//    NSApp::sharedApp->getNSModel()->outputHeight.addListener(this, &MTVideoProcessStream::documentSizeChanged);
-	processWidth.addListener(this, &MTVideoProcessStream::processSizeChanged);
-	processHeight.addListener(this, &MTVideoProcessStream::processSizeChanged);
+	updateTransformInternals();
 
-	videoInputDeviceID.addListener(this, &MTVideoProcessStream::videoDeviceIDChanged);
-	useVideoPlayer.addListener(this, &MTVideoProcessStream::videoPlayerStatusChanged);
-	videoFilePath.addListener(this, &MTVideoProcessStream::videoFilePathChanged);
+	//Add the listeners
+	processWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
+	processHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
+
+	videoInputDeviceID.addListener(this, &MTVideoInputStream::videoDeviceIDChanged);
+	useVideoPlayer.addListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
+	videoFilePath.addListener(this, &MTVideoInputStream::videoFilePathChanged);
 
 }
 
@@ -513,7 +529,7 @@ void MTVideoProcessStream::loadFromSerializer(ofXml& serializer)
 //Internals
 //////////////////////////////////
 
-void MTVideoProcessStream::updateTransformInternals()
+void MTVideoInputStream::updateTransformInternals()
 {
 	cv::Point2f world[4];
 	cv::Point2f process[4];
@@ -531,7 +547,7 @@ void MTVideoProcessStream::updateTransformInternals()
 
 		if (roiPoly.size() != 4)
 		{
-			ofLogError("MTVideoProcessStream", "error getting inputROI path!");
+			ofLogError("MTVideoInputStream", "error getting inputROI path!");
 			return;
 		}
 		for (int k = 0; k < 4; k++)
@@ -556,7 +572,7 @@ void MTVideoProcessStream::updateTransformInternals()
 	auto worldPoly = outputRegion->getOutline()[0];
 	if (worldPoly.size() != 4)
 	{
-		ofLogError("MTVideoProcessStream", "error getting output region path!");
+		ofLogError("MTVideoInputStream", "error getting output region path!");
 		return;
 	}
 
