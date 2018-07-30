@@ -71,7 +71,7 @@ MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& proc
 	return processData;
 }
 
-std::unique_ptr<MTVideoProcessUI> MTBackgroundSubstractionVideoProcess::createUI()
+std::shared_ptr<MTVideoProcessUI> MTBackgroundSubstractionVideoProcess::createUI()
 {
 	auto vp = shared_from_this();
 	videoProcessUI = std::make_unique<MTBackgroundSubstractionVideoProcessUI>(vp, OF_IMAGE_GRAYSCALE);
@@ -95,10 +95,10 @@ void MTBackgroundSubstractionVideoProcessUI::draw(ofxImGui::Settings& settings)
 //	ImGui::PushID(vp.get());
 	ofxImGui::BeginTree(vp->getName(), settings);
 	MTVideoProcessUIWithImage::draw(settings);
-	for (auto& param : vp->getParameters())
-	{
-		ofxImGui::AddParameter(param);
-	}
+//	for (auto& param : vp->getParameters())
+//	{
+		ofxImGui::AddGroup(vp->getParameters(), settings);
+//	}
 	ofxImGui::EndTree(settings);
 //	ImGui::PopID();
 }

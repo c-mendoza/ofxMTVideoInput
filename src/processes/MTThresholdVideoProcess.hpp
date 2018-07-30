@@ -16,7 +16,7 @@ public:
 
 	MTThresholdVideoProcess();
 	MTProcessData& process(MTProcessData& processData) override;
-	std::unique_ptr<MTVideoProcessUI> createUI() override;
+	std::shared_ptr<MTVideoProcessUI> createUI() override;
 
 protected:
 

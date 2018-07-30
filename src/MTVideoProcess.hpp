@@ -92,7 +92,7 @@ public:
 	virtual void setup();
 
 	virtual MTProcessData& process(MTProcessData& input) = 0;
-	virtual std::unique_ptr<MTVideoProcessUI> createUI();
+	virtual std::shared_ptr<MTVideoProcessUI> createUI();
 	virtual void setProcessSize(int w, int h)
 	{
 		processWidth = w;
