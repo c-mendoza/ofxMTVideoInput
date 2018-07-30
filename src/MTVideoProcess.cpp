@@ -25,7 +25,7 @@ void MTVideoProcess::setup()
 	processOutput.create(processHeight, processWidth, CV_8UC1);
 }
 
-std::unique_ptr<MTVideoProcessUI> MTVideoProcess::createUI()
+std::shared_ptr<MTVideoProcessUI> MTVideoProcess::createUI()
 {
 	auto vp = shared_from_this();
 	videoProcessUI = std::make_unique<MTVideoProcessUI>(vp);

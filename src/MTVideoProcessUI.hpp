@@ -41,8 +41,10 @@ public:
 	int outputImageWidth = 320;
 	int outputImageHeight = 240;
 
+	ofTexture outputImage;
+
 protected:
-	ofImage outputImage;
+
 	ofThreadChannel<ofPixels> outputChannel;
 };
 

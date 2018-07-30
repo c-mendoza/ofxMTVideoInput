@@ -127,7 +127,7 @@ MTProcessData& MTImageAdjustmentsVideoProcess::process(MTProcessData& processDat
 	return processData;
 }
 
-std::unique_ptr<MTVideoProcessUI> MTImageAdjustmentsVideoProcess::createUI()
+std::shared_ptr<MTVideoProcessUI> MTImageAdjustmentsVideoProcess::createUI()
 {
 	auto vp = shared_from_this();
 	videoProcessUI = std::make_unique<MTImageAdjustmentsVideoProcessUI>(vp, OF_IMAGE_GRAYSCALE);
