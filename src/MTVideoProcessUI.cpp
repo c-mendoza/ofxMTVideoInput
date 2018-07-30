@@ -22,7 +22,6 @@ MTVideoProcessUIWithImage(std::shared_ptr<MTVideoProcess> videoProcess,
 						  ofImageType imageType) : MTVideoProcessUI(videoProcess)
 {
 	auto stream = videoProcess->processStream.lock();
-	outputImage.allocate(stream->processWidth, stream->processHeight, imageType);
 	addEventListener(videoProcess->processCompleteFastEvent.newListener([this](
 			const MTVideoProcessCompleteFastEventArgs<MTVideoProcess>& args)
 																		{
@@ -42,7 +41,14 @@ void MTVideoProcessUIWithImage::draw(ofxImGui::Settings& settings)
 	ofPixels pixels;
 	while (outputChannel.tryReceive(pixels))
 	{
-		outputImage.setFromPixels(pixels);
+		if (!outputImage.isAllocated())
+		{
+			outputImage.allocate(pixels, false); //ImGui needs GL_TEXTURE_2D
+		}
+		else
+		{
+			outputImage.loadData(pixels);
+		}
 	}
 	ofxImGui::AddImage(outputImage, glm::vec2(outputImageWidth, outputImageHeight));
 }
