@@ -4,6 +4,7 @@
 
 #include <MTVideoInputStream.hpp>
 #include "MTImageAdjustmentsVideoProcess.hpp"
+#include "MTAppFrameworkUtils.hpp"
 
 #pragma mark Process
 
