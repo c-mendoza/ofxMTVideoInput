@@ -30,13 +30,13 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 	parameters.add(processesParameters);
 
 	outputRegion = std::make_shared<ofPath>();
-	inputROI = std::make_shared<ofPath>();
+	// Add a default value for the output region:
+	outputRegion->rectangle(0, 0, 1280, 720);
 
+	inputROI = std::make_shared<ofPath>();
 	// Add a default value for the inputROI:
 	inputROI->rectangle(0, 0, videoWidth, videoHeight);
 	isSetup = false;
-
-//	NSModel* m = MTApp::sharedApp->
 }
 
 MTVideoInputStream::~MTVideoInputStream()
@@ -66,6 +66,7 @@ void MTVideoInputStream::threadedFunction()
 	MTProcessData processData;
 	while (isThreadRunning())
 	{
+		lock();
 		videoGrabber.update();
 		if (videoGrabber.isFrameNew())
 		{
@@ -110,6 +111,7 @@ void MTVideoInputStream::threadedFunction()
 			yield();
 //            ofLogVerbose() << "No frame";
 		}
+		unlock();
 	}
 
 	if (isThreadRunning()) stopThread();
