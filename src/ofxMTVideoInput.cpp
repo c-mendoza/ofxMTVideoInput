@@ -22,6 +22,7 @@ std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(std::string name)
 	MTVideoInputStreamEventArgs args;
 	args.inputStream = stream;
 	inputStreamAddedEvent.notify(args);
+	stream->startStream();
 	return stream;
 }
 
