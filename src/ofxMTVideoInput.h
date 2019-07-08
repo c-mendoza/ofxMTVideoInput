@@ -21,7 +21,7 @@ class MTVideoProcessEventArgs;
 class MTVideoInput : public MTModel
 {
 public:
-	static MTVideoInput& getInstance()
+	static MTVideoInput& Instance()
 	{
 		static MTVideoInput instance; // Guaranteed to be destroyed.
 		// Instantiated on first use.

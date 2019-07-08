@@ -37,14 +37,27 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 	// Add a default value for the inputROI:
 	inputROI->rectangle(0, 0, videoWidth, videoHeight);
 	isSetup = false;
+
+	//Add the listeners
+	processWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
+	processHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
+
+	videoInputDeviceID.addListener(this, &MTVideoInputStream::videoDeviceIDChanged);
+	useVideoPlayer.addListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
+	videoFilePath.addListener(this, &MTVideoInputStream::videoFilePathChanged);
+
+	addEventListener(useROI.newListener([this](bool &val)
+										{
+											updateTransformInternals();
+										}));
 }
 
 MTVideoInputStream::~MTVideoInputStream()
 {
 	closeStream();
 	//TODO:
-//	App::sharedApp->getNSModel()->outputWidth.removeListener(this, &MTVideoInputStream::documentSizeChanged);
-//	App::sharedApp->getNSModel()->outputHeight.removeListener(this, &MTVideoInputStream::documentSizeChanged);
+//	App::sharedApp->getOMModel()->outputWidth.removeListener(this, &MTVideoInputStream::documentSizeChanged);
+//	App::sharedApp->getOMModel()->outputHeight.removeListener(this, &MTVideoInputStream::documentSizeChanged);
 	processWidth.removeListener(this, &MTVideoInputStream::processSizeChanged);
 	processHeight.removeListener(this, &MTVideoInputStream::processSizeChanged);
 	videoInputDeviceID.removeListener(this, &MTVideoInputStream::videoDeviceIDChanged);
@@ -88,23 +101,30 @@ void MTVideoInputStream::threadedFunction()
 				cv::flip(workingImage, workingImage, 1);
 			}
 
-			processData.clear();
-			processData.processSource = videoInputImage;
-			processData.processStream = workingImage;
-			for (auto p : videoProcesses)
+			if (isRunning)
 			{
-				processData = p->process(processData);
-				p->notifyEvents();
+				processData.clear();
+				processData.processSource = videoInputImage;
+				processData.processStream = workingImage;
 
+				for (auto p : videoProcesses)
+				{
+					if (p->isActive)
+					{
+						processData = p->process(processData);
+						p->notifyEvents();
+					}
+
+				}
+
+				auto eventArgs = MTVideoInputStreamCompleteEventArgs();
+				eventArgs.stream = this->shared_from_this();
+				eventArgs.input = videoInputImage;
+				eventArgs.result = processData.processResult;
+				eventArgs.fps = fpsCounter.getFps();
+				streamCompleteFastEvent.notify(this, eventArgs);
+				streamCompleteEvent.notify(this, eventArgs);
 			}
-
-			auto eventArgs = MTVideoInputStreamCompleteEventArgs();
-			eventArgs.stream = this->shared_from_this();
-			eventArgs.input = videoInputImage;
-			eventArgs.result = processData.processResult;
-			eventArgs.fps = fpsCounter.getFps();
-			streamCompleteFastEvent.notify(this, eventArgs);
-			streamCompleteEvent.notify(this, eventArgs);
 		}
 		else
 		{
@@ -129,7 +149,7 @@ void MTVideoInputStream::setup()
 
 	if (outputRegion->getCommands().size() < 5)
 	{
-//        auto model = App::sharedApp->getNSModel();
+//        auto model = App::sharedApp->getOMModel();
 		outputRegion->setMode(ofPath::COMMANDS);
 		outputRegion->clear();
 		outputRegion->moveTo(0, 0);
@@ -462,7 +482,11 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		return;
 	}
 
+	// Custom deserialization to deal with nested ParameterGroups
 	MTModel::deserialize(thisChainXml);
+
+	// ofDeserialize doesn't seem to work with nested ParameterGroups
+//	ofDeserialize(thisChainXml, parameters);
 
 	auto processParamsXml = serializer.findFirst("//" + getName() + "/" + "Video_Processes");
 
@@ -479,7 +503,7 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		string name = processXml.getName();
 		if (auto typenameXml = processXml.getChild("Process_Type_Name"))
 		{
-			std::shared_ptr<MTVideoProcess> process = MTVideoInput::getInstance().createVideoProcess(
+			std::shared_ptr<MTVideoProcess> process = MTVideoInput::Instance().createVideoProcess(
 					typenameXml.getValue());
 			if (process != nullptr)
 			{
@@ -490,6 +514,10 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 			{
 				ofLogError("MTVideoInputStream") << "Could not find class " << typenameXml.getValue();
 			}
+		}
+		else
+		{
+			ofLogError("MTVideoInputStream") << "No Process Type Name found in XML, skipping process " << name;
 		}
 	}
 
@@ -515,14 +543,6 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 	}
 
 	updateTransformInternals();
-
-	//Add the listeners
-	processWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
-	processHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
-
-	videoInputDeviceID.addListener(this, &MTVideoInputStream::videoDeviceIDChanged);
-	useVideoPlayer.addListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
-	videoFilePath.addListener(this, &MTVideoInputStream::videoFilePathChanged);
 
 }
 
