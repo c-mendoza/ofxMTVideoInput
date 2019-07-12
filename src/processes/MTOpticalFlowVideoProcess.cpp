@@ -61,8 +61,9 @@ MTProcessData& MTOpticalFlowVideoProcess::process(MTProcessData& processData)
 
 }
 
-ofVec2f MTOpticalFlowVideoProcess::getFlowPosition(int x, int y)
+glm::vec2& MTOpticalFlowVideoProcess::getFlowPosition(int x, int y)
 {
-	return fb.getFlow().at<ofVec2f>(y, x);
+	const cv::Vec2f& vec = fb.getFlow().at<cv::Vec2f>(y, x);
+	return glm::vec2(x + vec[0], y + vec[1]);
 }
 
