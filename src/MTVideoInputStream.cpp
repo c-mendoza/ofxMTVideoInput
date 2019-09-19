@@ -86,6 +86,11 @@ void MTVideoInputStream::threadedFunction()
 			fpsCounter.newFrame();
 			videoInputImage = ofxCv::toCv(static_cast<const ofPixels&>(videoGrabber.getPixels()));
 
+			if (mirrorVideo.get())
+			{
+				cv::flip(videoInputImage, videoInputImage, 1);
+			}
+
 			if (videoInputImage.cols != processWidth)
 			{
 				cv::Size size(processWidth, processHeight);
@@ -96,10 +101,6 @@ void MTVideoInputStream::threadedFunction()
 				workingImage = videoInputImage;
 			}
 
-			if (mirrorVideo.get())
-			{
-				cv::flip(workingImage, workingImage, 1);
-			}
 
 			if (isRunning)
 			{
