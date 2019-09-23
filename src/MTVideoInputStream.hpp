@@ -81,8 +81,20 @@ public:
 	//////////////////////////////////
 	//Getters and Setters
 	//////////////////////////////////
-	cv::Mat getProcessToWorldTransform();
-	cv::Mat getWorldToProcessTransform();
+//	cv::Mat getProcessToWorldTransform();
+//	cv::Mat getWorldToProcessTransform();
+	/**
+	 * @brief Returns a copy of the output transform. This method is thread-safe.
+	 * @return The clone() of the cv::Mat representing the output transform
+	 */
+	cv::Mat getProcessToOutputTransform();
+
+	/**
+	 * @brief Returns a clone of the output to process transform. This method is thread-safe.
+	 * @return cv::Mat clone
+	 */
+	cv::Mat getOutputToProcessTransform();
+
 
 	ofPath getInputROI();
 	ofPath getOutputRegion();
@@ -181,8 +193,11 @@ protected:
 	//////////////////////////////////
 	//Internals
 	//////////////////////////////////
-	cv::Mat worldToProcessTransform;
-	cv::Mat processToWorldTransform;
+//	cv::Mat worldToProcessTransform;
+//	cv::Mat processToWorldTransform;
+	cv::Mat roiToProcessTransform;
+	cv::Mat processToOutputTransform;
+	cv::Mat outputToProcessTransform;
 
 	//The overall dimensions of the
 	//NS Program Output. Essentially cached values:
@@ -200,6 +215,12 @@ protected:
 	ofVideoPlayer videoPlayer;
 
 	bool initializeVideoCapture();
+
+	std::queue<std::function<void()>> functionQueue;
+	void enqueueFunction(std::function<void()> funct)
+	{
+		functionQueue.push(funct);
+	}
 };
 
 struct MTProcessData
@@ -261,7 +282,6 @@ public:
 	 * @brief The current frames per second reading of the stream.
 	 */
 	double fps;
-
 };
 
 #endif /* NSVideoProcessChain_hpp */
