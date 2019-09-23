@@ -50,11 +50,13 @@ MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& proc
 		bSub->setHistory(history);
 		bSub->setDetectShadows(detectShadows);
 		bSub->setVarThreshold(threshold);
+		updateParams = false;
 	}
 	bSub->apply(processData.processStream, processBuffer);
 	if (substractStream)
 	{
-		cv::subtract(processBuffer, processData.processStream, processOutput);
+//		cv::subtract(processBuffer, processData.processStream, processOutput);
+		cv::bitwise_and(processData.processStream, processBuffer, processOutput);
 	}
 	else
 	{
