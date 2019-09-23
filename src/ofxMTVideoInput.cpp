@@ -121,5 +121,13 @@ size_t MTVideoInput::getStreamCount()
 	return inputStreams.size();
 }
 
+auto r1 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTThresholdVideoProcess", []() -> MTVideoProcess* {return new MTThresholdVideoProcess(); });
+auto r2 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTBackgroundSubstractionVideoProcess", []() -> MTVideoProcess * {return new MTBackgroundSubstractionVideoProcess(); });
+auto r3 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTOpticalFlowVideoProcess", []() -> MTVideoProcess * {return new MTOpticalFlowVideoProcess(); });
+auto r4 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTImageAdjustmentsVideoProcess", []() -> MTVideoProcess * {return new MTImageAdjustmentsVideoProcess(); });
 
+//REGISTER_SUBCLASS(MTVideoProcess, MTBackgroundSubstractionVideoProcess)
+//REGISTER_SUBCLASS(MTVideoProcess, MTThresholdVideoProcess)
+//REGISTER_SUBCLASS(MTVideoProcess, MTOpticalFlowVideoProcess)
+//REGISTER_SUBCLASS(MTVideoProcess, MTImageAdjustmentsVideoProcess)
 

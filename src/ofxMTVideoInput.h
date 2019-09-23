@@ -76,9 +76,4 @@ public:
 };
 
 
-REGISTER_SUBCLASS(MTVideoProcess, MTBackgroundSubstractionVideoProcess)
-REGISTER_SUBCLASS(MTVideoProcess, MTThresholdVideoProcess)
-REGISTER_SUBCLASS(MTVideoProcess, MTOpticalFlowVideoProcess)
-REGISTER_SUBCLASS(MTVideoProcess, MTImageAdjustmentsVideoProcess)
-
 #endif //NERVOUSSTRUCTUREOF_OFXMTVIDEOINPUT_H
