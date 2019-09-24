@@ -182,7 +182,7 @@ void MTVideoInputStream::setup()
 		outputRegion->lineTo(processWidth, processHeight);
 		outputRegion->lineTo(0, processHeight);
 	}
-	useROI = false;
+//	useROI = false;
 	updateTransformInternals();
 
 	isSetup = true;
