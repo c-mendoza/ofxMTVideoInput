@@ -58,7 +58,7 @@ public:
 	 */
 	MTProcessData& process(MTProcessData& processData) override;
 
-	glm::vec2& getFlowPosition(int x, int y);
+	const cv::Vec2f& getFlowPosition(int x, int y);
 
 private:
 	ofxCv::FlowFarneback fb;
