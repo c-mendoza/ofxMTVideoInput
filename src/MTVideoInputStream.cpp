@@ -320,12 +320,14 @@ void MTVideoInputStream::setInputROI(ofPath path)
 
 void MTVideoInputStream::setOutputRegion(ofPath path)
 {
-	enqueueFunction([this, path]
-					{
+	lock();
+//	enqueueFunction([this, path]
+//					{
 						outputRegion->clear();
 						outputRegion->append(path);
 						updateTransformInternals();
-					});
+//					});
+	unlock();
 }
 
 #pragma mark UTILITY
