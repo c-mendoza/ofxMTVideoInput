@@ -2,8 +2,15 @@
 // Created by Cristobal Mendoza on 7/16/18.
 //
 
+#include <processes/MTBackgroundSubstraction2.hpp>
 #include "ofxMTVideoInput.h"
 #include "ofXml.h"
+#include "processes/MTThresholdVideoProcess.hpp"
+#include "processes/MTBackgroundSubstractionVideoProcess.hpp"
+#include "processes/MTOpticalFlowVideoProcess.hpp"
+#include "processes/MTImageAdjustmentsVideoProcess.hpp"
+#include "registry.h"
+#include "processes/MTMorphology.hpp"
 
 MTVideoInput::MTVideoInput() : MTModel("VideoProcessChains")
 {}
@@ -121,10 +128,13 @@ size_t MTVideoInput::getStreamCount()
 	return inputStreams.size();
 }
 
+// Stupid shit so that we can compile with MSVC
 auto r1 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTThresholdVideoProcess", []() -> MTVideoProcess* {return new MTThresholdVideoProcess(); });
 auto r2 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTBackgroundSubstractionVideoProcess", []() -> MTVideoProcess * {return new MTBackgroundSubstractionVideoProcess(); });
 auto r3 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTOpticalFlowVideoProcess", []() -> MTVideoProcess * {return new MTOpticalFlowVideoProcess(); });
 auto r4 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTImageAdjustmentsVideoProcess", []() -> MTVideoProcess * {return new MTImageAdjustmentsVideoProcess(); });
+auto r5 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTMorphologyVideoProcess", []() -> MTVideoProcess * {return new MTMorphologyVideoProcess(); });
+auto r6 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTBackgroundSubstraction2", []() -> MTVideoProcess * {return new MTBackgroundSubstraction2(); });
 
 //REGISTER_SUBCLASS(MTVideoProcess, MTBackgroundSubstractionVideoProcess)
 //REGISTER_SUBCLASS(MTVideoProcess, MTThresholdVideoProcess)

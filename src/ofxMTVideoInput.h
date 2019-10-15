@@ -7,11 +7,6 @@
 
 #include "MTVideoInputStream.hpp"
 #include "MTVideoProcess.hpp"
-#include "processes/MTThresholdVideoProcess.hpp"
-#include "processes/MTBackgroundSubstractionVideoProcess.hpp"
-#include "processes/MTOpticalFlowVideoProcess.hpp"
-#include "processes/MTImageAdjustmentsVideoProcess.hpp"
-#include "registry.h"
 #include "MTModel.hpp"
 
 
@@ -31,7 +26,7 @@ public:
 private:
 	MTVideoInput();
 	std::vector<std::shared_ptr<MTVideoInputStream>> inputStreams;
-
+	void syncParameters();
 public:
 	MTVideoInput(MTVideoInput const&) = delete;
 	void operator=(MTVideoInput const&) = delete;
