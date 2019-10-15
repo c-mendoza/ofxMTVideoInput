@@ -30,7 +30,7 @@ void MTThresholdVideoProcess::process(MTProcessData& processData)
 		processBuffer = streamBuffer;
 	}
 	cv::threshold(processBuffer, processOutput, threshold.get(), threshold.getMax(),
-				  CV_THRESH_BINARY);
+				  cv::THRESH_BINARY);
 	processData.processStream = processOutput;
 	processData.processResult = processOutput;
 }
