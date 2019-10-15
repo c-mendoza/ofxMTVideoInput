@@ -35,8 +35,8 @@ std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(std::string name)
 
 void MTVideoInput::removeStream(int index)
 {
-	parameters.remove(inputStreams.at(index)->getName());
 	auto iter = inputStreams.erase(inputStreams.begin() + index);
+	syncParameters();
 	MTVideoInputStreamEventArgs args;
 	args.inputStream = *iter;
 	inputStreamRemovedEvent.notify(args);
@@ -92,9 +92,19 @@ typename std::vector<std::shared_ptr<MTVideoInputStream>>::const_reverse_iterato
 
 void MTVideoInput::serialize(ofXml& serializer)
 {
+	syncParameters();
 	MTModel::serialize(serializer);
 }
 
+void MTVideoInput::syncParameters()
+{
+	parameters.clear();
+	for (auto& stream : inputStreams)
+	{
+		stream->syncParameters();
+		parameters.add(stream->getParameters());
+	}
+}
 void MTVideoInput::deserialize(ofXml& serializer)
 {
 //	MTModel::deserialize(serializer);
