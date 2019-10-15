@@ -222,6 +222,8 @@ protected:
 	{
 		functionQueue.push(funct);
 	}
+
+	void syncParameters();
 };
 
 struct MTProcessData

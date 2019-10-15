@@ -427,12 +427,26 @@ void MTVideoInputStream::addVideoProcess(std::shared_ptr<MTVideoProcess> process
 void MTVideoInputStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, unsigned long index)
 {
 	lock();
+	process->setProcessSize(processingWidth, processingHeight);
+	process->setup();
+	int count = std::count_if(videoProcesses.begin(), videoProcesses.end(), [&process](std::shared_ptr<MTVideoProcess> p) {
+		if (p->getName().find(process->getName()) != string::npos)
+		{
+			return true;
+		}
+		return false;
+	});
+
+	if (count > 0)
+	{
+		auto newName = process->getName() + "_" + ofToString(count);
+		process->setName(newName);
+	}
+
 	videoProcesses.insert(videoProcesses.begin() + index, process);
-//	if (ofStringTimesInString(process->getName(), "_") < 1)
-//	{
-//		process->setName(process->getName() + "_" + ofToString(videoProcesses.size()));
-//	}
-	processesParameters.addAt(process->getParameters(), index);
+
+//	processesParameters.addAt(process->getParameters(), index);
+	syncParameters();
 	process->processStream = shared_from_this();
 	processAddedEvent.notify(this, process);
 	unlock();
@@ -451,7 +465,8 @@ void MTVideoInputStream::swapProcesses(size_t index1, size_t index2)
 	videoProcesses.at(index1)->setup();
 	videoProcesses.at(index2)->setup();
 	std::swap(videoProcesses.at(index1), videoProcesses.at(index2));
-	processesParameters.swapPositions(index1, index2);
+	syncParameters();
+//	processesParameters.swapPositions(index1, index2);
 	processOrderChangedEvent.notify(this);
 	unlock();
 }
@@ -483,16 +498,16 @@ int MTVideoInputStream::getVideoProcessCount()
 
 bool MTVideoInputStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> process)
 {
-	lock();
+	std::unique_lock<std::mutex> (this->mutex);
 	auto iter = std::find(videoProcesses.begin(), videoProcesses.end(), process);
 	if (iter != videoProcesses.end())
 	{
 		videoProcesses.erase(iter);
+		syncParameters();
+//		processesParameters.remove()  <- TODO
 		processRemovedEvent.notify(this, process);
-		unlock();
 		return true;
 	}
-	unlock();
 	return false;
 }
 
@@ -660,4 +675,15 @@ void MTVideoInputStream::updateTransformInternals()
 //	worldToProcessTransform = cv::getPerspectiveTransform(world, process);
 	outputRegionString = MTApp::pathToString(*outputRegion.get());
 	inputROIString = MTApp::pathToString(*inputROI.get());
+}
+
+void MTVideoInputStream::syncParameters()
+{
+	parameters.remove(processesParameters);
+	processesParameters.clear();
+	for(auto p : videoProcesses)
+	{
+		processesParameters.add(p->getParameters());
+	}
+	parameters.add(processesParameters);
 }
