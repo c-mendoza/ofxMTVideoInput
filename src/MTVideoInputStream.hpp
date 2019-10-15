@@ -19,6 +19,9 @@ class MTVideoInputStream : public MTModel,
 						   public ofThread,
 						   public std::enable_shared_from_this<MTVideoInputStream>
 {
+
+	friend class MTVideoInput;
+
 public:
 	MTVideoInputStream(std::string name);
 	~MTVideoInputStream();
