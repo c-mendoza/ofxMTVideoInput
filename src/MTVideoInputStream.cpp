@@ -88,7 +88,8 @@ void MTVideoInputStream::threadedFunction()
 			continue;
 		}
 
-
+//		std::unique_lock<std::mutex>(mutex);
+		lock();
 		while (!functionQueue.empty())
 		{
 			auto f = functionQueue.front();
@@ -157,6 +158,7 @@ void MTVideoInputStream::threadedFunction()
 			yield();
 //            ofLogVerbose() << "No frame";
 		}
+		unlock();
 	}
 
 	ofLogVerbose("MTVideoInput") <<  "Thread complete";
@@ -288,13 +290,13 @@ void MTVideoInputStream::setStreamRunning(bool _isRunning)
 
 cv::Mat MTVideoInputStream::getProcessToOutputTransform()
 {
-	ofScopedLock lock(this->mutex);
+//	ofScopedLock lock(this->mutex);
 	return processToOutputTransform.clone();
 }
 
 cv::Mat MTVideoInputStream::getOutputToProcessTransform()
 {
-	ofScopedLock lock(this->mutex);
+//	ofScopedLock lock(this->mutex);
 	return outputToProcessTransform.clone();
 }
 
