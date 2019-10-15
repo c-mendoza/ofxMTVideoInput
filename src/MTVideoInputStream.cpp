@@ -21,8 +21,8 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 				   videoHeight.set("Video Height", 240, 1, 1080),
 				   useVideoPlayer.set("Use Player", false),
 				   videoFilePath.set("File", ""),
-				   processWidth.set("Process Width", 320, 120, 1920),
-				   processHeight.set("Process Height", 240, 80, 1080),
+				   processingWidth.set("Process Width", 320, 120, 1920),
+				   processingHeight.set("Process Height", 240, 80, 1080),
 				   useROI.set("Use ROI", false),
 				   outputRegionString.set("Output Region", ""),
 				   inputROIString.set("Input ROI", ""));
@@ -39,8 +39,8 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 	isSetup = false;
 
 	//Add the listeners
-	processWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
-	processHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
+	processingWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
+	processingHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
 
 	videoInputDeviceID.addListener(this, &MTVideoInputStream::videoDeviceIDChanged);
 	useVideoPlayer.addListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
@@ -60,8 +60,8 @@ MTVideoInputStream::~MTVideoInputStream()
 	//TODO:
 //	App::sharedApp->getOMModel()->outputWidth.removeListener(this, &MTVideoInputStream::documentSizeChanged);
 //	App::sharedApp->getOMModel()->outputHeight.removeListener(this, &MTVideoInputStream::documentSizeChanged);
-	processWidth.removeListener(this, &MTVideoInputStream::processSizeChanged);
-	processHeight.removeListener(this, &MTVideoInputStream::processSizeChanged);
+	processingWidth.removeListener(this, &MTVideoInputStream::processSizeChanged);
+	processingHeight.removeListener(this, &MTVideoInputStream::processSizeChanged);
 	videoInputDeviceID.removeListener(this, &MTVideoInputStream::videoDeviceIDChanged);
 	useVideoPlayer.removeListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
 	videoFilePath.removeListener(this, &MTVideoInputStream::videoFilePathChanged);
@@ -99,7 +99,7 @@ void MTVideoInputStream::threadedFunction()
 		videoGrabber.update();
 		if (videoGrabber.isFrameNew())
 		{
-			cv::Size processSize(processWidth, processHeight);
+			cv::Size processSize(processingWidth, processingHeight);
 			fpsCounter.newFrame();
 			videoInputImage = ofxCv::toCv(static_cast<const ofPixels&>(videoGrabber.getPixels()));
 
@@ -108,7 +108,7 @@ void MTVideoInputStream::threadedFunction()
 				cv::flip(videoInputImage, videoInputImage, 1);
 			}
 
-			if (videoInputImage.cols != processWidth)
+			if (videoInputImage.cols != processingWidth)
 			{
 				cv::resize(videoInputImage, workingImage, processSize);
 			}
@@ -169,8 +169,8 @@ void MTVideoInputStream::threadedFunction()
 
 void MTVideoInputStream::setup()
 {
-	workingImage.create(processHeight, processWidth, CV_8UC1);
-	processOutput.create(processHeight, processWidth, CV_8UC1);
+	workingImage.create(processingHeight, processingWidth, CV_8UC1);
+	processOutput.create(processingHeight, processingWidth, CV_8UC1);
 
 	if (outputRegion->getCommands().size() < 5)
 	{
@@ -178,9 +178,9 @@ void MTVideoInputStream::setup()
 		outputRegion->setMode(ofPath::COMMANDS);
 		outputRegion->clear();
 		outputRegion->moveTo(0, 0);
-		outputRegion->lineTo(processWidth, 0);
-		outputRegion->lineTo(processWidth, processHeight);
-		outputRegion->lineTo(0, processHeight);
+		outputRegion->lineTo(processingWidth, 0);
+		outputRegion->lineTo(processingWidth, processingHeight);
+		outputRegion->lineTo(0, processingHeight);
 	}
 //	useROI = false;
 	updateTransformInternals();
@@ -206,7 +206,7 @@ void MTVideoInputStream::setup()
 	//Initialize processes
 	for (const auto& p : videoProcesses)
 	{
-		p->setProcessSize(processWidth, processHeight);
+		p->setProcessSize(processingWidth, processingHeight);
 		p->processStream = shared_from_this();
 		p->setup();
 	}
@@ -340,13 +340,13 @@ void MTVideoInputStream::setProcessingResolution(int w, int h)
 	int bogus = 0;
 	lock();
 	// Transform the inputROI:
-	auto transform = glm::scale(glm::vec3((float) w / processWidth, (float) h / processHeight, 1));
+	auto transform = glm::scale(glm::vec3((float) w / processingWidth, (float) h / processingHeight, 1));
 	for (auto command : inputROI->getCommands())
 	{
 		command.to = transform * glm::vec4(command.to, 1);
 	}
-	processWidth.setWithoutEventNotifications(w);
-	processHeight.setWithoutEventNotifications(h);
+	processingWidth.setWithoutEventNotifications(w);
+	processingHeight.setWithoutEventNotifications(h);
 	updateTransformInternals();
 	unlock();
 	processSizeChanged(bogus);
@@ -370,11 +370,11 @@ void MTVideoInputStream::processSizeChanged(int& changedValue)
 {
 	enqueueFunction([this, changedValue]
 					{
-						workingImage.create(processHeight, processWidth, CV_8UC1);
-						processOutput.create(processHeight, processWidth, CV_8UC1);
+						workingImage.create(processingHeight, processingWidth, CV_8UC1);
+						processOutput.create(processingHeight, processingWidth, CV_8UC1);
 						for (const auto& p : videoProcesses)
 						{
-							p->setProcessSize(processWidth, processHeight);
+							p->setProcessSize(processingWidth, processingHeight);
 						}
 						updateTransformInternals();
 					});
@@ -584,7 +584,7 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 	else
 	{
 		inputROI = std::make_shared<ofPath>();
-		inputROI->rectangle(0, 0, processWidth, processHeight);
+		inputROI->rectangle(0, 0, processingWidth, processingHeight);
 	}
 
 	updateTransformInternals();
@@ -611,8 +611,8 @@ void MTVideoInputStream::updateTransformInternals()
 		// Basic error checking:
 		for (auto command : inputROI->getCommands())
 		{
-			command.to.x = ofClamp(command.to.x, 0, processWidth);
-			command.to.y = ofClamp(command.to.y, 0, processHeight);
+			command.to.x = ofClamp(command.to.x, 0, processingWidth);
+			command.to.y = ofClamp(command.to.y, 0, processingHeight);
 		}
 
 		auto roiPoly = inputROI->getOutline()[0];
@@ -631,12 +631,12 @@ void MTVideoInputStream::updateTransformInternals()
 
 	process[0].x = 0;
 	process[0].y = 0;
-	process[1].x = processWidth;
+	process[1].x = processingWidth;
 	process[1].y = 0;
-	process[2].x = processWidth;
-	process[2].y = processHeight;
+	process[2].x = processingWidth;
+	process[2].y = processingHeight;
 	process[3].x = 0;
-	process[3].y = processHeight;
+	process[3].y = processingHeight;
 
 	auto outputPoly = outputRegion->getOutline()[0];
 	if (outputPoly.size() != 4)

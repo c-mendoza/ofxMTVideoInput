@@ -32,8 +32,8 @@ public:
 
 	ofParameter<bool> mirrorVideo;
 	//The pixel dimensions of the video process chain:
-	ofParameter<int> processWidth;
-	ofParameter<int> processHeight;
+	ofParameter<int> processingWidth;
+	ofParameter<int> processingHeight;
 	/**
 	 * For serialization. Do not modify manually.
 	 */
