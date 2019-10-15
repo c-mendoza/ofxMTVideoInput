@@ -18,7 +18,7 @@ MTThresholdVideoProcess::MTThresholdVideoProcess() : MTVideoProcess("Threshold",
 	parameters.add(threshold.set("Threshold", 127, 0, 255));
 }
 
-MTProcessData& MTThresholdVideoProcess::process(MTProcessData& processData)
+void MTThresholdVideoProcess::process(MTProcessData& processData)
 {
 	auto& streamBuffer = processData.processStream;
 	if (streamBuffer.channels() >= 3)
@@ -33,7 +33,6 @@ MTProcessData& MTThresholdVideoProcess::process(MTProcessData& processData)
 				  CV_THRESH_BINARY);
 	processData.processStream = processOutput;
 	processData.processResult = processOutput;
-	return processData;
 }
 
 std::shared_ptr<MTVideoProcessUI> MTThresholdVideoProcess::createUI()

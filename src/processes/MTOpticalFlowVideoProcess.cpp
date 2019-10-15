@@ -9,6 +9,7 @@
 #include <MTVideoInputStream.hpp>
 #include "processes/MTOpticalFlowVideoProcess.hpp"
 
+
 void MTOpticalFlowVideoProcess::notifyEvents()
 {
 	MTVideoProcess::notifyEvents();
@@ -31,7 +32,7 @@ MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess() :
 	parameters.add(fbWinSize.set("winSize", 32, 4, 64));
 }
 
-MTProcessData& MTOpticalFlowVideoProcess::process(MTProcessData& processData)
+void MTOpticalFlowVideoProcess::process(MTProcessData& processData)
 {
 
 	if(usefb) {
@@ -57,8 +58,6 @@ MTProcessData& MTOpticalFlowVideoProcess::process(MTProcessData& processData)
 	curFlow->calcOpticalFlow(processData.processStream);
 	processOutput = fb.getFlow();
 	processData.processResult = processOutput;
-	return processData;
-
 }
 
 const cv::Vec2f& MTOpticalFlowVideoProcess::getFlowPosition(int x, int y)

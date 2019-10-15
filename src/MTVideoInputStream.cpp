@@ -137,7 +137,7 @@ void MTVideoInputStream::threadedFunction()
 				{
 					if (p->isActive)
 					{
-						processData = p->process(processData);
+						p->process(processData);
 						p->notifyEvents();
 					}
 

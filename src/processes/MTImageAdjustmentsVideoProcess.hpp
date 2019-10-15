@@ -25,7 +25,7 @@ public:
 
 	MTImageAdjustmentsVideoProcess();
 	void setup() override;
-	MTProcessData& process(MTProcessData& processData) override;
+	void process(MTProcessData& processData) override;
 	std::shared_ptr<MTVideoProcessUI> createUI() override;
 
 protected:

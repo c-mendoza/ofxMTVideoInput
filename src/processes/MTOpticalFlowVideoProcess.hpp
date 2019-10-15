@@ -56,7 +56,7 @@ public:
 	/**
 	 * Returns a cv::Mat with the flow vectors. Input image is unchanged
 	 */
-	MTProcessData& process(MTProcessData& processData) override;
+	void process(MTProcessData& processData) override;
 
 	const cv::Vec2f& getFlowPosition(int x, int y);
 

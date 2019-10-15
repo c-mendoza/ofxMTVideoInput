@@ -62,13 +62,13 @@ void MTImageAdjustmentsVideoProcess::setup()
 	MTVideoProcess::setup();
 }
 
-MTProcessData& MTImageAdjustmentsVideoProcess::process(MTProcessData& processData)
+void MTImageAdjustmentsVideoProcess::process(MTProcessData& processData)
 {
 	bool flagChanged = false;
 
 	if (processData.processStream.type() != CV_8UC1)
 	{
-		cv::cvtColor(processData.processStream, processBuffer, CV_RGB2GRAY);
+		cv::cvtColor(processData.processStream, processBuffer, cv::COLOR_RGB2GRAY);
 		processData.processStream = processBuffer;
 		flagChanged = true;
 	}
@@ -124,8 +124,8 @@ MTProcessData& MTImageAdjustmentsVideoProcess::process(MTProcessData& processDat
 	else
 	{
 		processOutput = processData.processStream;
+		processData.processResult = processOutput;
 	}
-	return processData;
 }
 
 std::shared_ptr<MTVideoProcessUI> MTImageAdjustmentsVideoProcess::createUI()

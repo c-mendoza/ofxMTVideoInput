@@ -40,10 +40,11 @@ void MTBackgroundSubstractionVideoProcess::setup()
 {
 	MTVideoProcess::setup();
 	bSub = cv::createBackgroundSubtractorMOG2();
+	bSub->setShadowValue(0);
 	updateParams = true;
 }
 
-MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& processData)
+void MTBackgroundSubstractionVideoProcess::process(MTProcessData& processData)
 {
 	if (updateParams)
 	{
@@ -64,13 +65,12 @@ MTProcessData& MTBackgroundSubstractionVideoProcess::process(MTProcessData& proc
 	}
 //	cv::threshold(processBuffer, processOutput, 200, 255, cv::THRESH_BINARY);
 //	input.at(MTVideoInputStreamKey).copyTo(input.at(MTVideoInputStreamKey), processOutput);
-	if (substractStream)
-	{
+//	if (substractStream)
+//	{
 		processData.processStream = processOutput;
-	}
+//	}
 	processData.processResult = processOutput;
-	processData.processMask = processOutput;
-	return processData;
+	processData.processMask = processBuffer;
 }
 
 std::shared_ptr<MTVideoProcessUI> MTBackgroundSubstractionVideoProcess::createUI()

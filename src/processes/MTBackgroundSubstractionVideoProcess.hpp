@@ -19,7 +19,7 @@ public:
 	ofParameter<bool> substractStream;
 	MTBackgroundSubstractionVideoProcess();
 	void setup() override;
-	MTProcessData& process(MTProcessData& processData) override;
+	void process(MTProcessData& processData) override;
 	std::shared_ptr<MTVideoProcessUI> createUI() override;
 	cv::Ptr<cv::BackgroundSubtractor> getBackgroundSubtractor() { return bSub; }
 

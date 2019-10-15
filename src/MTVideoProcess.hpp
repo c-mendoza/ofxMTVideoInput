@@ -91,7 +91,7 @@ public:
 //	virtual void saveWithSerializer(ofXml& serializer) = 0;
 	virtual void setup();
 
-	virtual MTProcessData& process(MTProcessData& input) = 0;
+	virtual void process(MTProcessData& input) = 0;
 	virtual std::shared_ptr<MTVideoProcessUI> createUI();
 	virtual void setProcessSize(int w, int h)
 	{
