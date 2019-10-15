@@ -137,7 +137,7 @@ std::shared_ptr<MTVideoProcessUI> MTImageAdjustmentsVideoProcess::createUI()
 
 void MTImageAdjustmentsVideoProcess::updateGammaLUT()
 {
-	float realGamma = std::pow(gamma, 3);
+	float realGamma = std::pow(gamma, 3.0f);
 	uchar* p = gammaLUT.ptr();
 	for (int i = 0; i < 256; ++i)
 	{
