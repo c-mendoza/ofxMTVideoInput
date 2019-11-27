@@ -30,6 +30,8 @@ MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess() :
 	parameters.add(fbPolySigma.set("fbPolySigma", 1.5, 1.1, 2));
 	parameters.add(fbUseGaussian.set("fbUseGaussian", false));
 	parameters.add(fbWinSize.set("winSize", 32, 4, 64));
+	parameters.add(useThreshold.set("Use Threshold Filter",false));
+	parameters.add(threshold.set("Threshold", 0, 0, 5000));
 }
 
 void MTOpticalFlowVideoProcess::process(MTProcessData& processData)
@@ -54,9 +56,31 @@ void MTOpticalFlowVideoProcess::process(MTProcessData& processData)
 		lk.setMaxLevel(lkMaxLevel);
 	}
 
-	// you can use Flow polymorphically
 	curFlow->calcOpticalFlow(processData.processStream);
-	processOutput = fb.getFlow();
+
+	if (useThreshold)
+	{
+		cv::Mat buf;
+		ofxCv::imitate(buf, fb.getFlow());
+		cv::pow(fb.getFlow(), 2, buf);
+		auto totalScalar = cv::sum(buf);
+//		float total = std::abs(totalScalar[0]) + std::abs(totalScalar[1]);
+		float total = totalScalar[0] + totalScalar[1];
+		if (total < threshold)
+		{
+			ofxCv::imitate(processOutput, fb.getFlow());
+			processOutput = fb.getFlow().zeros(fb.getFlow().size(), fb.getFlow().type());
+		}
+		else
+		{
+			processOutput = fb.getFlow();
+		}
+	}
+	else
+	{
+		processOutput = fb.getFlow();
+	}
+
 	processData.processResult = processOutput;
 }
 

@@ -31,7 +31,6 @@ public:
 	ofParameter<float> lkQualityLevel;
 	ofParameter<float> fbPyrScale;
 	ofParameter<int> lkMinDistance;
-	ofParameter<int> threshold;
 	ofParameter<int> lkMaxFeatures;
 	ofParameter<int> lkMaxLevel;
 	ofParameter<int> fbWinSize;
@@ -41,8 +40,10 @@ public:
 	ofParameter<int> lkWinSize;
 	ofParameter<bool> fbUseGaussian;
 	ofParameter<bool> usefb;
-	ofParameter<bool> useBackgroundSub;
 	ofParameter<bool> useThreshold;
+	ofParameter<int> threshold;
+//	ofParameter<bool> useMorphFilter;
+//	ofParameter<int> kernelSize;
 	ofFastEvent<MTVideoProcessCompleteFastEventArgs<MTOpticalFlowVideoProcess>> opticalFlowProcessCompleteFastEvent;
 
 
