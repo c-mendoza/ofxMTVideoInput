@@ -5,6 +5,8 @@
 #include <MTVideoInputStream.hpp>
 #include "MTImageAdjustmentsVideoProcess.hpp"
 #include "MTAppFrameworkUtils.hpp"
+#include <opencv2/photo.hpp>
+#include "opencv2/imgproc.hpp"
 
 #pragma mark Process
 
@@ -22,7 +24,8 @@ MTImageAdjustmentsVideoProcess::MTImageAdjustmentsVideoProcess() : MTVideoProces
 				   claheClipLimit.set("Adaptive Clip Limit", 10, 1, 30),
 				   gamma.set("Gamma", 1, 0, 2),
 				   brightness.set("Brightness", 0, -1, 1),
-				   contrast.set("Contrast", 0, -1, 1));
+				   contrast.set("Contrast", 0, -1, 1),
+				   denoise.set("Denoise", false));
 	addEventListener(gamma.newListener([this](float args)
 									   {
 										   gammaNeedsUpdate = true;
@@ -113,6 +116,12 @@ void MTImageAdjustmentsVideoProcess::process(MTProcessData& processData)
 		}
 		cv::LUT(processBuffer, bcLUT, processBuffer);
 		flagChanged = true;
+	}
+
+	if (denoise)
+	{
+//		cv::fastNlMeansDenoising(processBuffer, processBuffer);
+		cv::GaussianBlur(processBuffer, processBuffer, cv::Size(7, 7), 0);
 	}
 
 	if (flagChanged)

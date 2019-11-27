@@ -22,6 +22,7 @@ public:
 	ofParameter<bool> useHistogramEqualization;
 	ofParameter<bool> useCLAHE;
 	ofParameter<float> claheClipLimit;
+	ofParameter<bool> denoise;
 
 	MTImageAdjustmentsVideoProcess();
 	void setup() override;
