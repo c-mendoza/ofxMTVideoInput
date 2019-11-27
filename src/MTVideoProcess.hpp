@@ -131,7 +131,6 @@ protected:
 	int processHeight;
 	ofRectangle outputTarget;
 	bool markProcessSizeChanged = false;
-	std::unique_ptr<MTVideoProcessUI> videoProcessUI;
 
 };
 
