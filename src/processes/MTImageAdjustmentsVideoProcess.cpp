@@ -130,9 +130,7 @@ void MTImageAdjustmentsVideoProcess::process(MTProcessData& processData)
 
 std::shared_ptr<MTVideoProcessUI> MTImageAdjustmentsVideoProcess::createUI()
 {
-	auto vp = shared_from_this();
-	videoProcessUI = std::make_unique<MTImageAdjustmentsVideoProcessUI>(vp, OF_IMAGE_GRAYSCALE);
-	return std::move(videoProcessUI);
+	return std::make_shared<MTImageAdjustmentsVideoProcessUI>(shared_from_this(), OF_IMAGE_GRAYSCALE);
 }
 
 void MTImageAdjustmentsVideoProcess::updateGammaLUT()

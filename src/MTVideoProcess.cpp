@@ -11,8 +11,6 @@ MTVideoProcess::MTVideoProcess(std::string name, std::string typeName) : MTModel
 	parameters.add(processTypeName, isActive);
 	processWidth = 320;
 	processHeight = 240;
-//	useTransform.set("Use Transform", false);
-//	processBuffer = cv::Mat
 };
 
 MTVideoProcess::~MTVideoProcess()
@@ -27,7 +25,5 @@ void MTVideoProcess::setup()
 
 std::shared_ptr<MTVideoProcessUI> MTVideoProcess::createUI()
 {
-	auto vp = shared_from_this();
-	videoProcessUI = std::make_unique<MTVideoProcessUI>(vp);
-	return std::move(videoProcessUI);
+	return std::make_shared<MTVideoProcessUI>(shared_from_this());
 }

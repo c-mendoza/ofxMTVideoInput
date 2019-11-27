@@ -58,9 +58,7 @@ void MTMorphologyVideoProcess::updateInternals()
 
 std::shared_ptr<MTVideoProcessUI> MTMorphologyVideoProcess::createUI()
 {
-	auto vp = shared_from_this();
-	videoProcessUI = std::make_unique<MTMorphologyVideoProcessUI>(vp, OF_IMAGE_GRAYSCALE);
-	return std::move(videoProcessUI);
+	return std::make_shared<MTMorphologyVideoProcessUI>(shared_from_this(), OF_IMAGE_GRAYSCALE);
 }
 
 void MTMorphologyVideoProcessUI::draw(ofxImGui::Settings& settings)

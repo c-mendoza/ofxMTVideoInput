@@ -37,8 +37,7 @@ void MTThresholdVideoProcess::process(MTProcessData& processData)
 
 std::shared_ptr<MTVideoProcessUI> MTThresholdVideoProcess::createUI()
 {
-	videoProcessUI = std::make_unique<MTThresholdVideoProcessUI>(shared_from_this(), OF_IMAGE_GRAYSCALE);
-	return std::move(videoProcessUI);
+	return std::make_shared<MTThresholdVideoProcessUI>(shared_from_this(), OF_IMAGE_GRAYSCALE);
 }
 
 #pragma mark Threshold UI

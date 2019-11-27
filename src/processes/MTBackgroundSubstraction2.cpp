@@ -83,9 +83,7 @@ void MTBackgroundSubstraction2::process(MTProcessData& processData)
 
 std::shared_ptr<MTVideoProcessUI> MTBackgroundSubstraction2::createUI()
 {
-	auto vp = shared_from_this();
-	videoProcessUI = std::make_unique<MTBackgroundSubstraction2UI>(vp, OF_IMAGE_GRAYSCALE);
-	return std::move(videoProcessUI);
+	return std::make_shared<MTBackgroundSubstraction2UI>(shared_from_this(), OF_IMAGE_GRAYSCALE);
 }
 
 void MTBackgroundSubstraction2::updateInternals()
