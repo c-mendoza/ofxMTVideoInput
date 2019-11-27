@@ -19,8 +19,8 @@ MTVideoProcess::~MTVideoProcess()
 
 void MTVideoProcess::setup()
 {
-//	processBuffer.create(processHeight, processWidth, CV_8UC1);
-//	processOutput.create(processHeight, processWidth, CV_8UC1);
+	processBuffer.create(processHeight, processWidth, CV_8UC1);
+	processOutput.create(processHeight, processWidth, CV_8UC1);
 }
 
 std::shared_ptr<MTVideoProcessUI> MTVideoProcess::createUI()
