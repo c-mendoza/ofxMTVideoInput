@@ -10,12 +10,9 @@
 #define MTVideoProcess_hpp
 
 #include <stdio.h>
-//#include "ofxMTAppFramework.h"
 #include "MTModel.hpp"
 #include "ofxCv.h"
 #include "registry.h"
-//#include "MTVideoProcessUI.hpp"
-//#include "ofxMTApp.hpp"
 
 class MTVideoInputStream;
 class MTProcessData;
