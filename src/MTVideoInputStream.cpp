@@ -14,6 +14,7 @@
 
 MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 {
+
 	parameters.add(isRunning.set("Running", false),
 				   mirrorVideo.set("Mirror Video", true),
 				   videoInputDeviceID.set("Capture Device", 0, 0, 20),
@@ -24,18 +25,19 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 				   processingWidth.set("Process Width", 320, 120, 1920),
 				   processingHeight.set("Process Height", 240, 80, 1080),
 				   useROI.set("Use ROI", false),
-				   outputRegionString.set("Output Region", ""),
-				   inputROIString.set("Input ROI", ""));
+				   outputRegion.set("Output Region", ofPath()),
+				   inputROI.set("Input ROI", ofPath()));
 	processesParameters.setName("Video Processes");
 	parameters.add(processesParameters);
 
-	outputRegion = std::make_shared<ofPath>();
-	// Add a default value for the output region:
-	outputRegion->rectangle(0, 0, 1280, 720);
+	// Add some defaults for the regions:
+	ofPath outDef;
+	outDef.rectangle(0, 0, 1280, 720);
+	outputRegion = outDef;
+	ofPath inDef;
+	inDef.rectangle(0, 0, videoWidth, videoHeight);
+	inputROI = inDef;
 
-	inputROI = std::make_shared<ofPath>();
-	// Add a default value for the inputROI:
-	inputROI->rectangle(0, 0, videoWidth, videoHeight);
 	isSetup = false;
 
 	//Add the listeners
@@ -52,6 +54,13 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 										{
 											updateTransformInternals();
 										}));
+
+//	addEventListener(outputRegion.newListener([this](ofPath& val) {
+//		updateTransformInternals();
+//	}));
+//	addEventListener(inputROI.newListener([this](ofPath& val) {
+//		updateTransformInternals();
+//	}));
 }
 
 MTVideoInputStream::~MTVideoInputStream()
@@ -174,16 +183,16 @@ void MTVideoInputStream::setup()
 	workingImage.create(processingHeight, processingWidth, CV_8UC1);
 	processOutput.create(processingHeight, processingWidth, CV_8UC1);
 
-	if (outputRegion->getCommands().size() < 5)
-	{
-//        auto model = App::sharedApp->getOMModel();
-		outputRegion->setMode(ofPath::COMMANDS);
-		outputRegion->clear();
-		outputRegion->moveTo(0, 0);
-		outputRegion->lineTo(processingWidth, 0);
-		outputRegion->lineTo(processingWidth, processingHeight);
-		outputRegion->lineTo(0, processingHeight);
-	}
+//	if (outputRegion->getCommands().size() < 5)
+//	{
+////        auto model = App::sharedApp->getOMModel();
+//		outputRegion->setMode(ofPath::COMMANDS);
+//		outputRegion->clear();
+//		outputRegion->moveTo(0, 0);
+//		outputRegion->lineTo(processingWidth, 0);
+//		outputRegion->lineTo(processingWidth, processingHeight);
+//		outputRegion->lineTo(0, processingHeight);
+//	}
 //	useROI = false;
 	updateTransformInternals();
 
@@ -300,37 +309,17 @@ cv::Mat MTVideoInputStream::getOutputToProcessTransform()
 	return outputToProcessTransform.clone();
 }
 
-ofPath MTVideoInputStream::getInputROI()
-{
-	return *inputROI.get();
-}
-
-ofPath MTVideoInputStream::getOutputRegion()
-{
-	return *outputRegion.get();
-}
-
-void MTVideoInputStream::setInputROI(ofPath path)
-{
-	enqueueFunction([this, path]
-					{
-						inputROI->clear();
-						inputROI->append(path);
-						updateTransformInternals();
-					});
-}
-
-void MTVideoInputStream::setOutputRegion(ofPath path)
-{
-	lock();
-//	enqueueFunction([this, path]
-//					{
-						outputRegion->clear();
-						outputRegion->append(path);
-						updateTransformInternals();
-//					});
-	unlock();
-}
+//void MTVideoInputStream::setOutputRegion(ofPath path)
+//{
+//	lock();
+////	enqueueFunction([this, path]
+////					{
+//						outputRegion->clear();
+//						outputRegion->append(path);
+//						updateTransformInternals();
+////					});
+//	unlock();
+//}
 
 #pragma mark UTILITY
 //////////////////////////////////
@@ -347,8 +336,8 @@ void MTVideoInputStream::setProcessingResolution(int w, int h)
 	{
 		command.to = transform * glm::vec4(command.to, 1);
 	}
-	processingWidth.setWithoutEventNotifications(w);
-	processingHeight.setWithoutEventNotifications(h);
+	processingWidth.set(w);
+	processingHeight.set(h);
 	updateTransformInternals();
 	unlock();
 	processSizeChanged(bogus);
@@ -544,11 +533,7 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		return;
 	}
 
-	// Custom deserialization to deal with nested ParameterGroups
 	MTModel::deserialize(thisChainXml);
-
-	// ofDeserialize doesn't seem to work with nested ParameterGroups
-//	ofDeserialize(thisChainXml, parameters);
 
 	auto processParamsXml = serializer.findFirst("//" + getName() + "/" + "Video_Processes");
 
@@ -583,27 +568,6 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		}
 	}
 
-	if (outputRegionString.get().substr(0, 1) == "{")
-	{
-		ofPath orPath = MTApp::pathFromString(outputRegionString);
-		outputRegion = std::make_shared<ofPath>(orPath);
-	}
-	else
-	{
-		outputRegion = std::make_shared<ofPath>();
-	}
-
-	if (inputROIString.get().substr(0, 1) == "{")
-	{
-		auto irPath = MTApp::pathFromString(inputROIString);
-		inputROI = std::make_shared<ofPath>(irPath);
-	}
-	else
-	{
-		inputROI = std::make_shared<ofPath>();
-		inputROI->rectangle(0, 0, processingWidth, processingHeight);
-	}
-
 	updateTransformInternals();
 
 	if (wasRunning) {
@@ -626,13 +590,13 @@ void MTVideoInputStream::updateTransformInternals()
 	if (this->useROI)
 	{
 		// Basic error checking:
-		for (auto command : inputROI->getCommands())
+		for (auto command : inputROI.get().getCommands())
 		{
 			command.to.x = ofClamp(command.to.x, 0, processingWidth);
 			command.to.y = ofClamp(command.to.y, 0, processingHeight);
 		}
 
-		auto roiPoly = inputROI->getOutline()[0];
+		auto roiPoly = inputROI.get().getOutline()[0];
 
 		if (roiPoly.size() != 4)
 		{
@@ -655,7 +619,7 @@ void MTVideoInputStream::updateTransformInternals()
 	process[3].x = 0;
 	process[3].y = processingHeight;
 
-	auto outputPoly = outputRegion->getOutline()[0];
+	auto outputPoly = outputRegion.get().getOutline()[0];
 	if (outputPoly.size() != 4)
 	{
 		ofLogError("MTVideoInputStream", "error getting output region path!");
@@ -673,10 +637,9 @@ void MTVideoInputStream::updateTransformInternals()
 	outputToProcessTransform = cv::getPerspectiveTransform(output, process);
 //	processToWorldTransform = cv::getPerspectiveTransform(process, world);
 //	worldToProcessTransform = cv::getPerspectiveTransform(world, process);
-	outputRegionString = MTApp::pathToString(*outputRegion.get());
-	inputROIString = MTApp::pathToString(*inputROI.get());
 }
 
+// TODO: Check to see if this is still necessary
 void MTVideoInputStream::syncParameters()
 {
 	parameters.remove(processesParameters);

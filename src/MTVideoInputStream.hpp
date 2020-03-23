@@ -34,23 +34,17 @@ public:
 	//////////////////////////////////
 
 	ofParameter<bool> mirrorVideo;
-	//The pixel dimensions of the video process chain:
-	ofParameter<int> processingWidth;
-	ofParameter<int> processingHeight;
-	/**
-	 * For serialization. Do not modify manually.
-	 */
-	ofParameter<std::string> outputRegionString;
-	/**
- 	* For serialization. Do not modify manually.
- 	*/
-	ofParameter<std::string> inputROIString;
+
+	// These are read only because they are not thread-safe. Use the setters
+	// declared
+	ofReadOnlyParameter<int, MTVideoInputStream> processingWidth;
+	ofReadOnlyParameter<int, MTVideoInputStream> processingHeight;
+	ofReadOnlyParameter<ofPath, MTVideoInputStream> outputRegion;
+	ofReadOnlyParameter<ofPath, MTVideoInputStream> inputROI;
 	ofParameter<bool> useROI;
 	ofParameterGroup processesParameters;
 
 protected:
-	std::shared_ptr<ofPath> outputRegion;
-	std::shared_ptr<ofPath> inputROI;
 
 public:
 	std::vector<std::shared_ptr<MTVideoProcess>> videoProcesses;
@@ -99,11 +93,20 @@ public:
 	 */
 	cv::Mat getOutputToProcessTransform();
 
+	void setInputROI(ofPath& path) {
+		lock();
+		inputROI = path;
+		updateTransformInternals();
+		unlock();
+	}
 
-	ofPath getInputROI();
-	ofPath getOutputRegion();
-	void setInputROI(ofPath path);
-	void setOutputRegion(ofPath path);
+	void setOutputRegion(ofPath& path) {
+		lock();
+		outputRegion = path;
+		updateTransformInternals();
+		unlock();
+	}
+
 
 	//////////////////////////////////
 	//Utility
