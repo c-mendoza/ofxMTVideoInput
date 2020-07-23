@@ -12,8 +12,31 @@
 #include "ofThread.h"
 #include "ofxCv.h"
 #include "MTVideoProcess.hpp"
+#include "MTVideoInputSource.hpp"
+#include "ofxMTVideoInput.h"
 
-class MTVideoInputStreamCompleteEventArgs;
+
+class MTVideoInputStreamCompleteEventArgs : public ofEventArgs
+{
+public:
+	std::shared_ptr<MTVideoInputStream> stream;
+	/**
+	 * @brief The resulting Mat after all processing completes. The data in this Mat
+	 * is owned by the stream, so if you need to modify the data you must clone the Mat.
+	 */
+	cv::Mat result;
+	/**
+	 * @brief The initial Mat before processing. This will typically be
+	 * the unprocessed video input image. The data in this Mat
+	 * is owned by the stream, so if you need to modify the data you must clone the Mat.
+	 */
+	cv::Mat input;
+
+	/**
+	 * @brief The current frames per second reading of the stream.
+	 */
+	double fps;
+};
 
 class MTVideoInputStream : public MTModel,
 						   public ofThread,
@@ -43,8 +66,7 @@ public:
 	ofReadOnlyParameter<ofPath, MTVideoInputStream> inputROI;
 	ofParameter<bool> useROI;
 	ofParameterGroup processesParameters;
-
-protected:
+	ofParameterGroup inputSourcesParameters;
 
 public:
 	std::vector<std::shared_ptr<MTVideoProcess>> videoProcesses;
@@ -66,15 +88,6 @@ public:
 	ofEvent<std::shared_ptr<MTVideoProcess>> processAddedEvent;
 	ofEvent<std::shared_ptr<MTVideoProcess>> processRemovedEvent;
 	ofEvent<void> processOrderChangedEvent;
-
-	//////////////////////////////////
-	//Video
-	//////////////////////////////////
-	ofParameter<int> videoWidth;
-	ofParameter<int> videoHeight;
-	ofParameter<bool> useVideoPlayer;
-	ofParameter<std::string> videoFilePath;
-	ofParameter<int> videoInputDeviceID;
 
 	//////////////////////////////////
 	//Getters and Setters
@@ -107,6 +120,10 @@ public:
 		unlock();
 	}
 
+	void setCaptureResolution(int w, int h);
+	void setProcessingResolution(int w, int h);
+
+	void setInputSource(MTVideoInputSourceInfo sourceInfo);
 
 	//////////////////////////////////
 	//Utility
@@ -118,19 +135,6 @@ public:
 	double getFps()
 	{ return fpsCounter.getFps(); }
 
-
-//	///Transforms a point in process coordinates to world coordinates,
-//	///using the transformation values specified in the chain's processOut
-//	///members.
-//	void processToWorld(ofVec2f processPoint, ofVec2f& transformedPoint);
-//
-//	///Transform a point from workd to process coordinates. Pass a reference
-//	///to a Vec2f to get the transformed point.
-//	///TODO: Limit transformation position to process-space?
-//	void worldToProcess(ofVec2f worldPoint, ofVec2f& transformedPoint);
-
-	void setCaptureResolution(int w, int h);
-	void setProcessingResolution(int w, int h);
 	//////////////////////////////////
 	//Data Handling
 	//////////////////////////////////
@@ -143,20 +147,6 @@ public:
 	std::shared_ptr<MTVideoProcess> getProcessWithName(std::string name);
 	int getVideoProcessCount();
 	void removeAllVideoProcesses();
-
-	//////////////////////////////////
-	//Getters
-	//////////////////////////////////
-
-	const ofVideoGrabber& getVideoGrabber()
-	{
-		return videoGrabber;
-	}
-
-	const ofVideoPlayer& getVideoPlayer()
-	{
-		return videoPlayer;
-	}
 
 	//////////////////////////////////
 	//Class Overrides
@@ -200,28 +190,16 @@ protected:
 	//////////////////////////////////
 	//Internals
 	//////////////////////////////////
-//	cv::Mat worldToProcessTransform;
-//	cv::Mat processToWorldTransform;
 	cv::Mat roiToProcessTransform;
 	cv::Mat processToOutputTransform;
 	cv::Mat outputToProcessTransform;
-
-	//The overall dimensions of the
-	//NS Program Output. Essentially cached values:
-	//Think about doing this a bit differently, perhaps listening for document size changes
-//	int outputWidth;
-//	int outputHeight;
-//	int outputAspectRatio;
-//	int outputInvWidth;
-//	int outputInvHeight;
 //
 	//////////////////////////////////
 	//Video Internals
 	//////////////////////////////////
-	ofVideoGrabber videoGrabber;
-	ofVideoPlayer videoPlayer;
 
 	bool initializeVideoCapture();
+	std::shared_ptr<MTVideoInputSource> inputSource;
 
 	std::queue<std::function<void()>> functionQueue;
 	void enqueueFunction(std::function<void()> funct)
@@ -268,29 +246,6 @@ struct MTProcessData
 		processSource = Mat();
 		processMask = Mat();
 	}
-};
-
-
-class MTVideoInputStreamCompleteEventArgs : public ofEventArgs
-{
-public:
-	std::shared_ptr<MTVideoInputStream> stream;
-	/**
-	 * @brief The resulting Mat after all processing completes. The data in this Mat
-	 * is owned by the stream, so if you need to modify the data you must clone the Mat.
-	 */
-	cv::Mat result;
-	/**
-	 * @brief The initial Mat before processing. This will typically be
-	 * the unprocessed video input image. The data in this Mat
-	 * is owned by the stream, so if you need to modify the data you must clone the Mat.
-	 */
-	cv::Mat input;
-
-	/**
-	 * @brief The current frames per second reading of the stream.
-	 */
-	double fps;
 };
 
 #endif /* NSVideoProcessChain_hpp */

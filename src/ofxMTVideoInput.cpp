@@ -11,9 +11,17 @@
 #include "processes/MTImageAdjustmentsVideoProcess.hpp"
 #include "registry.h"
 #include "processes/MTMorphology.hpp"
+#include "MTVideoInputSource.hpp"
 
 MTVideoInput::MTVideoInput() : MTModel("VideoProcessChains")
-{}
+{
+	registerVideoProcess<MTThresholdVideoProcess>("MTThresholdVideoProcess");
+	registerVideoProcess<MTBackgroundSubstraction2>("MTBackgroundSubstraction2");
+	registerVideoProcess<MTMorphologyVideoProcess>("MTMorphologyVideoProcess");
+	registerVideoProcess<MTImageAdjustmentsVideoProcess>("MTImageAdjustmentsVideoProcess");
+	registerVideoProcess<MTOpticalFlowVideoProcess>("MTOpticalFlowVideoProcess");
+	registerVideoProcess<MTBackgroundSubstractionVideoProcess>("MTBackgroundSubstractionVideoProcess");
+}
 
 std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream()
 {
@@ -25,7 +33,6 @@ std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(std::string name)
 	auto stream = std::make_shared<MTVideoInputStream>(name);
 	inputStreams.push_back(stream);
 	parameters.add(stream->getParameters());
-	// Fire addedVideoProcessStreamEvent
 	MTVideoInputStreamEventArgs args;
 	args.inputStream = stream;
 	inputStreamAddedEvent.notify(args);
@@ -143,13 +150,21 @@ size_t MTVideoInput::getStreamCount()
 	return inputStreams.size();
 }
 
+std::shared_ptr<MTVideoInputSource> MTVideoInput::createInputSource(MTVideoInputSourceInfo sourceInfo)
+{
+	auto inputSource = std::shared_ptr<MTVideoInputSource>(inputSourceRegistry.create(sourceInfo.type));
+	inputSource->deviceID.setWithoutEventNotifications(sourceInfo.deviceID);
+	return inputSource;
+}
+
+
 // Stupid shit so that we can compile with MSVC
-auto r1 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTThresholdVideoProcess", []() -> MTVideoProcess* {return new MTThresholdVideoProcess(); });
-auto r2 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTBackgroundSubstractionVideoProcess", []() -> MTVideoProcess * {return new MTBackgroundSubstractionVideoProcess(); });
-auto r3 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTOpticalFlowVideoProcess", []() -> MTVideoProcess * {return new MTOpticalFlowVideoProcess(); });
-auto r4 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTImageAdjustmentsVideoProcess", []() -> MTVideoProcess * {return new MTImageAdjustmentsVideoProcess(); });
-auto r5 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTMorphologyVideoProcess", []() -> MTVideoProcess * {return new MTMorphologyVideoProcess(); });
-auto r6 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTBackgroundSubstraction2", []() -> MTVideoProcess * {return new MTBackgroundSubstraction2(); });
+//auto r1 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTThresholdVideoProcess", []() -> MTVideoProcess* {return new MTThresholdVideoProcess(); });
+//auto r2 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTBackgroundSubstractionVideoProcess", []() -> MTVideoProcess * {return new MTBackgroundSubstractionVideoProcess(); });
+//auto r3 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTOpticalFlowVideoProcess", []() -> MTVideoProcess * {return new MTOpticalFlowVideoProcess(); });
+//auto r4 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTImageAdjustmentsVideoProcess", []() -> MTVideoProcess * {return new MTImageAdjustmentsVideoProcess(); });
+//auto r5 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTMorphologyVideoProcess", []() -> MTVideoProcess * {return new MTMorphologyVideoProcess(); });
+//auto r6 = ofxMTVideoInput::Registry<MTVideoProcess>::Register("MTBackgroundSubstraction2", []() -> MTVideoProcess * {return new MTBackgroundSubstraction2(); });
 
 //REGISTER_SUBCLASS(MTVideoProcess, MTBackgroundSubstractionVideoProcess)
 //REGISTER_SUBCLASS(MTVideoProcess, MTThresholdVideoProcess)

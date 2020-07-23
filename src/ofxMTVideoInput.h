@@ -5,13 +5,23 @@
 #ifndef NERVOUSSTRUCTUREOF_OFXMTVIDEOINPUT_H
 #define NERVOUSSTRUCTUREOF_OFXMTVIDEOINPUT_H
 
-#include "MTVideoInputStream.hpp"
 #include "MTVideoProcess.hpp"
 #include "MTModel.hpp"
-
+#include "registry.h"
 
 class MTVideoInputStreamEventArgs;
+class MTVideoInputStream;
 class MTVideoProcessEventArgs;
+class MTVideoInputSource;
+
+struct MTVideoInputSourceInfo
+{
+	std::string name;
+	std::string type;
+	std::string deviceID;
+};
+
+typedef std::function<std::vector<MTVideoInputSourceInfo>()> ProviderFunction;
 
 class MTVideoInput : public MTModel
 {
@@ -23,11 +33,6 @@ public:
 		return instance;
 	}
 
-private:
-	MTVideoInput();
-	std::vector<std::shared_ptr<MTVideoInputStream>> inputStreams;
-	void syncParameters();
-public:
 	MTVideoInput(MTVideoInput const&) = delete;
 	void operator=(MTVideoInput const&) = delete;
 
@@ -43,6 +48,9 @@ public:
 	typename std::vector<std::shared_ptr<MTVideoInputStream>>::const_iterator end() const;
 	typename std::vector<std::shared_ptr<MTVideoInputStream>>::const_reverse_iterator rend() const;
 
+	std::vector<MTVideoInputSourceInfo> getInputSources()
+	{ return inputSources; }
+
 
 	/**
 	 * @brief Instantiates a process from the registry.
@@ -53,7 +61,43 @@ public:
 	std::shared_ptr<MTVideoProcess> createVideoProcess(std::string processTypename)
 	{
 		return std::shared_ptr<MTVideoProcess>(
-				ofxMTVideoInput::Registry<MTVideoProcess>::Create(processTypename));
+				videoProcessRegistry.create(processTypename));
+	}
+
+	template<typename T>
+	bool registerVideoProcess(std::string vpName)
+	{
+		bool success = videoProcessRegistry.registerClass(vpName, []() -> MTVideoProcess*
+		{ return new T(); });
+		if (!success) ofLogError() << "Error registering video process " << vpName;
+		return success;
+	}
+
+	/**
+ * @brief Instantiates a process from the registry.
+ * @param processTypename The type name of the process.
+ * @return a shared_ptr<MTVideoProcess> if the type name was found in the registry, or
+ * nullptr if the video process could not be instantiated.
+ */
+	std::shared_ptr<MTVideoInputSource> createInputSource(MTVideoInputSourceInfo inputSourceInfo);
+
+	template<typename T>
+	bool registerInputSource(std::string sourceClassName, ProviderFunction provider)
+	{
+		bool success = inputSourceRegistry.registerClass(sourceClassName, []() -> MTVideoInputSource*
+		{ return new T(); });
+		if (!success)
+		{
+			ofLogError() << "Error registering input source " << sourceClassName;
+			return false;
+		}
+
+		addInputSourcesProvider(provider);
+	}
+
+	std::vector<std::string>& getVideoProcessNames()
+	{
+		return videoProcessRegistry.getNames();
 	}
 
 	virtual void serialize(ofXml& serializer);
@@ -61,6 +105,35 @@ public:
 
 	ofEvent<MTVideoInputStreamEventArgs> inputStreamAddedEvent;
 	ofEvent<MTVideoInputStreamEventArgs> inputStreamRemovedEvent;
+
+private:
+	MTVideoInput();
+	std::vector<std::shared_ptr<MTVideoInputStream>> inputStreams;
+	void syncParameters();
+	ofxMTVideoInput::Registry<MTVideoProcess> videoProcessRegistry;
+	ofxMTVideoInput::Registry<MTVideoInputSource> inputSourceRegistry;
+	std::vector<ProviderFunction> providerFunctions;
+	std::vector<MTVideoInputSourceInfo> inputSources;
+
+	void addInputSourcesProvider(ProviderFunction function)
+	{
+		providerFunctions.push_back(function);
+		updateInputSources();
+	}
+
+	void updateInputSources()
+	{
+		inputSources.clear();
+
+		for (auto f : providerFunctions)
+		{
+			auto sources = f();
+			for (auto source : sources)
+			{
+				inputSources.push_back(source);
+			}
+		}
+	}
 
 };
 
