@@ -36,6 +36,8 @@ public:
 	MTVideoInput(MTVideoInput const&) = delete;
 	void operator=(MTVideoInput const&) = delete;
 
+	void init();
+
 	std::shared_ptr<MTVideoInputStream> createStream();
 	std::shared_ptr<MTVideoInputStream> createStream(std::string name);
 	void removeStream(int index);
@@ -84,8 +86,8 @@ public:
 	template<typename T>
 	bool registerInputSource(std::string sourceClassName, ProviderFunction provider)
 	{
-		bool success = inputSourceRegistry.registerClass(sourceClassName, []() -> MTVideoInputSource*
-		{ return new T(); });
+		bool success = inputSourceRegistry.registerClass(sourceClassName, [](std::string arg) -> MTVideoInputSource*
+		{ return new T(arg); });
 		if (!success)
 		{
 			ofLogError() << "Error registering input source " << sourceClassName;
@@ -93,6 +95,7 @@ public:
 		}
 
 		addInputSourcesProvider(provider);
+		return true;
 	}
 
 	std::vector<std::string>& getVideoProcessNames()
@@ -111,9 +114,10 @@ private:
 	std::vector<std::shared_ptr<MTVideoInputStream>> inputStreams;
 	void syncParameters();
 	ofxMTVideoInput::Registry<MTVideoProcess> videoProcessRegistry;
-	ofxMTVideoInput::Registry<MTVideoInputSource> inputSourceRegistry;
+	ofxMTVideoInput::Registry<MTVideoInputSource, std::string> inputSourceRegistry;
 	std::vector<ProviderFunction> providerFunctions;
 	std::vector<MTVideoInputSourceInfo> inputSources;
+	bool isInit = false;
 
 	void addInputSourcesProvider(ProviderFunction function)
 	{

@@ -8,6 +8,7 @@
 #include <utils/ofThreadChannel.h>
 #include "MTVideoProcess.hpp"
 #include "MTVideoProcessUI.hpp"
+#include "ofxMTVideoInput.h"
 
 class MTThresholdVideoProcess : public MTVideoProcess
 {

@@ -10,7 +10,7 @@
 class MTVideoInputSourceOFGrabber : public MTVideoInputSource
 {
 public:
-	MTVideoInputSourceOFGrabber();
+	MTVideoInputSourceOFGrabber(std::string devID);
 	bool isFrameNew() override;
 	ofPixels& getPixels() override;
 	cv::Mat getCVPixels() override;
@@ -24,20 +24,9 @@ private:
 	ofVideoGrabber grabber;
 };
 
-auto bogus = MTVideoInput::Instance()
-		.registerInputSource<MTVideoInputSourceOFGrabber>("MTVideoInputSourceOFGrabber", []()
-		{
-			std::vector<MTVideoInputSourceInfo> sources;
-			auto ofDevices = ofVideoGrabber().listDevices();
-			for (auto device : ofDevices)
-			{
-				MTVideoInputSourceInfo info;
-				info.name = device.deviceName;
-				info.deviceID = device.id;
-				info.type = "MTVideoInputSourceOFGrabber";
-				sources.push_back(info);
-			}
-			return sources;
-		});
+class MTVideoInputSourceOFGrabberUI : public MTVideoInputSourceUIWithImage
+{
+
+};
 
 #endif //NERVOUSSTRUCTUREOF_MTVIDEOINPUTSOURCEOFVIDEOGRABBER_HPP

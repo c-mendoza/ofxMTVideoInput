@@ -121,9 +121,12 @@ public:
 	}
 
 	void setCaptureResolution(int w, int h);
+	glm::vec2 getCaptureResolution();
 	void setProcessingResolution(int w, int h);
 
-	void setInputSource(MTVideoInputSourceInfo sourceInfo);
+	 void setInputSource(MTVideoInputSourceInfo sourceInf);
+	 void setInputSource(MTVideoInputSourceInfo sourceInf, ofXml& serializer);
+	std::weak_ptr<MTVideoInputSource> getInputSource() { return inputSource; }
 
 	//////////////////////////////////
 	//Utility
@@ -178,7 +181,7 @@ protected:
 //	void documentSizeChanged(int& changedValue);
 	void processSizeChanged(int& value);
 	void processTransformChanged(int& value);
-	void videoDeviceIDChanged(int& unused);
+//	void videoDeviceIDChanged(int& unused);
 	void videoPlayerStatusChanged(bool& unused);
 	void videoFilePathChanged(std::string& newPath);
 	bool isSetup;
