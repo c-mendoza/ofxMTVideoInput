@@ -88,12 +88,13 @@ public:
 			return context;
 	 }
 
-	 static rs2::device getDeviceWithSerial(std::string serial);
+	 rs2::device getDeviceWithSerial(std::string serial);
 
 private:
 	 rs2::colorizer colorizer;
-	 rs2::pipeline pipeline;
-	 rs2::frame_queue frameQueue;
+//	 rs2::pipeline pipeline;
+	 rs2::frame_queue outputQueue;
+	 rs2::frame_queue postProcessingQueue;
 	 rs2::pointcloud pointcloud;
 	 rs2::device device;
 	 rs2::sensor sensor;
@@ -117,10 +118,11 @@ private:
 						 frame.get_width() * frame.get_height() * sizeof(T) * pix.getNumChannels());
 	 }
 
-	 void getSupportedResolutions(rs2::device device);
+	 void getSupportedResolutions(rs2::sensor& sensor);
 	 rs2::video_stream_profile getBestProfile(int width, int height, int fps);
 	 std::vector<rs2::video_stream_profile> streamProfiles;
 	 void createParameterFromOption(rs2_option option);
+	 void setRS2Option(rs2::options endpoint, rs2_option option, float val);
 
 	 ofThreadChannel<std::pair<rs2_option, float>> optionsChannel;
 };
