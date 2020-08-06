@@ -197,7 +197,7 @@ std::shared_ptr<MTVideoInputSource> MTVideoInput::createInputSource(MTVideoInput
 	 auto deviceID = sourceInfo.deviceID;
 	 auto inputSource = std::shared_ptr<MTVideoInputSource>(inputSourceRegistry.create<std::string>(sourceInfo.type,
 																																																	std::move(deviceID)));
-	 if (inputSource != nullptr) inputSource->deviceID.setWithoutEventNotifications(sourceInfo.deviceID);
+//	 if (inputSource != nullptr) inputSource->deviceID.setWithoutEventNotifications(sourceInfo.deviceID);
 	 return inputSource;
 }
 
