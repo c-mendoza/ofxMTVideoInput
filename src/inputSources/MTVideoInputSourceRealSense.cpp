@@ -13,7 +13,7 @@ MTVideoInputSourceRealSense::MTVideoInputSourceRealSense(std::string devID) :
 	 device = MTVideoInputSourceRealSense::getDeviceWithSerial(deviceID);
 //	 outputQueue = rs2::frame_queue();
 //	 postProcessingQueue = rs2::frame
-		auto sensors = device.query_sensors();
+	 auto sensors = device.query_sensors();
 	 for (auto s : sensors)
 	 {
 			if (s.as<rs2::depth_sensor>()) // Only depth sensor for now
@@ -23,12 +23,21 @@ MTVideoInputSourceRealSense::MTVideoInputSourceRealSense(std::string devID) :
 				 for (auto opt : opts)
 				 {
 						if (sensor.is_option_read_only(opt)) continue;
-						createParameterFromOption(opt);
+						createParameterFromOption(sensor, opt, parameters);
 				 }
 				 break;
 			}
 	 }
 
+	 auto copts = colorizer.get_supported_options();
+	 colorizerGroup.setName("Colorizer");
+	 for (auto option : copts)
+	 {
+			ofLogVerbose() << colorizer.get_option_name(option) << " | " << colorizer.get_option_description(option)
+										 << " step: " << colorizer.get_option_range(option).step;
+			createParameterFromOption(colorizer, option, colorizerGroup);
+
+	 }
 	 getSupportedResolutions(sensor);
 
 //	captureSize.setWithoutEventNotifications(())
@@ -58,7 +67,8 @@ MTVideoInputSourceRealSense::MTVideoInputSourceRealSense(std::string devID) :
 											 tempFilterDelta.set("Delta", 20, 1, 100)
 	 );
 
-	 addParameters(enableDepth.set("Enable Depth", true),
+	 addParameters(colorizerGroup,
+	 	 	enableDepth.set("Enable Depth", true),
 								 enableColor.set("Enable Color", false),
 								 useDisparity.set("Use Disparity Filter", true),
 								 decFilterGroup,
@@ -169,12 +179,14 @@ void MTVideoInputSourceRealSense::threadedFunction()
 
 void MTVideoInputSourceRealSense::start()
 {
-	 if (!isThreadRunning()) {
+	 if (!isThreadRunning())
+	 {
 
-	 	 sensor.start([this](rs2::frame frame) {
-				postProcessingQueue.enqueue(frame);
-	 	 });
-	 	 startThread();
+			sensor.start([this](rs2::frame frame)
+									 {
+											postProcessingQueue.enqueue(frame);
+									 });
+			startThread();
 	 }
 }
 
@@ -189,8 +201,10 @@ void MTVideoInputSourceRealSense::close()
 			sensor.stop();
 			sensor.close();
 			rs2::frame frame;
-			while (postProcessingQueue.poll_for_frame(&frame)){}
-			while (outputQueue.poll_for_frame(&frame)){}
+			while (postProcessingQueue.poll_for_frame(&frame))
+			{}
+			while (outputQueue.poll_for_frame(&frame))
+			{}
 
 	 }
 }
@@ -259,6 +273,8 @@ void MTVideoInputSourceRealSense::setFilterOptions()
 	 temp_filter.set_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, tempFilterAlpha.get());
 	 temp_filter.set_option(RS2_OPTION_FILTER_SMOOTH_DELTA, tempFilterDelta.get());
 	 temp_filter.set_option(RS2_OPTION_HOLES_FILL, float(tempFilterPersistence.get()));
+	 
+	 
 }
 
 MTVideoInputSourceRealSense::~MTVideoInputSourceRealSense()
@@ -270,7 +286,8 @@ rs2::device MTVideoInputSourceRealSense::getDeviceWithSerial(std::string serial)
 {
 	 rs2::device dev;
 	 auto devices = getRS2Context().query_devices();
-	 if (devices.size() == 0) {
+	 if (devices.size() == 0)
+	 {
 			ofLogError("MTVideoInputSourceRealSense") << "No devices found!";
 			return dev;
 	 }
@@ -353,29 +370,34 @@ rs2::video_stream_profile MTVideoInputSourceRealSense::getBestProfile(int width,
 
 	 for (auto profile : streamProfiles)
 	 {
-	 	 int deltaW = abs(width - profile.width());
-	 	 if (deltaW < bestDeltaW) {
-	 	 	 bestDeltaW = deltaW;
-	 	 	 bWidth = profile.width();
-	 	 }
+			int deltaW = abs(width - profile.width());
+			if (deltaW < bestDeltaW)
+			{
+				 bestDeltaW = deltaW;
+				 bWidth = profile.width();
+			}
 	 }
 
 	 for (auto profile : streamProfiles)
 	 {
-	 	 if (profile.width() == bWidth) {
-	 	 	 int deltaH = abs(height - profile.height());
-	 	 	 if (deltaH < bestDeltaH) {
-	 	 	 	 bestDeltaH = deltaH;
-	 	 	 	 bHeight = profile.height();
-	 	 	 }
-	 	 }
+			if (profile.width() == bWidth)
+			{
+				 int deltaH = abs(height - profile.height());
+				 if (deltaH < bestDeltaH)
+				 {
+						bestDeltaH = deltaH;
+						bHeight = profile.height();
+				 }
+			}
 	 }
 
 	 for (auto profile : streamProfiles)
 	 {
-			if (profile.width() == bWidth && profile.height() == bHeight) {
+			if (profile.width() == bWidth && profile.height() == bHeight)
+			{
 				 int deltaF = abs(fps - profile.fps());
-				 if (deltaF < bestDeltaF) {
+				 if (deltaF < bestDeltaF)
+				 {
 						bestDeltaF = deltaF;
 						bHeight = profile.height();
 						bestProfile = profile;
@@ -386,47 +408,42 @@ rs2::video_stream_profile MTVideoInputSourceRealSense::getBestProfile(int width,
 	 return bestProfile;
 }
 
-void MTVideoInputSourceRealSense::createParameterFromOption(rs2_option option)
+void MTVideoInputSourceRealSense::createParameterFromOption(rs2::options endpoint, rs2_option option, ofParameterGroup& parameters)
 {
-	 if (sensor.get() == nullptr)
-	 {
-			ofLogError("MTVideoInputSourceRealSense") << "Tried to create parameters before setting the sensor";
-			return;
-	 }
 
-//	 ofLogVerbose() << sensor.get_option_name(option) << " step: " << sensor.get_option_range(option).step;
+//	 ofLogVerbose() << endpoint.get_option_name(option) << " step: " << endpoint.get_option_range(option).step;
 
-	 auto range = sensor.get_option_range(option);
+	 auto range = endpoint.get_option_range(option);
 	 // Bool param:
 	 if (range.min == 0 && range.max == 1 && range.step == 1)
 	 {
 			ofParameter<bool> bp;
-			parameters.add(bp.set(sensor.get_option_name(option), (range.def == 1.0f)));
-			addEventListener(bp.newListener([this, option](bool val)
+			parameters.add(bp.set(endpoint.get_option_name(option), (range.def == 1.0f)));
+			addEventListener(bp.newListener([this, endpoint, option](bool val)
 																			{
 //																				 optionsChannel.send(std::move(std::make_pair(option, val ? 1.0f : 0.0f)));
-																				 setRS2Option(sensor, option, val ? 1.0f : 0.0f);
+																				 setRS2Option(endpoint, option, val ? 1.0f : 0.0f);
 																			}));
 	 }
 	 else if (range.step == 1)
 	 {
 			ofParameter<int> param;
-			parameters.add(param.set(sensor.get_option_name(option), range.def, range.min, range.max));
-			addEventListener(param.newListener([this, option](int val)
+			parameters.add(param.set(endpoint.get_option_name(option), range.def, range.min, range.max));
+			addEventListener(param.newListener([this, endpoint, option](int val)
 																				 {
-				 																		setRS2Option(sensor, option, float(val));
+																						setRS2Option(endpoint, option, float(val));
 																				 }));
 	 }
 	 else
 	 {
 			ofParameter<float> param;
-			parameters.add(param.set(sensor.get_option_name(option), range.def, range.min, range.max));
-			addEventListener(param.newListener([this, option](float val)
+			parameters.add(param.set(endpoint.get_option_name(option), range.def, range.min, range.max));
+			addEventListener(param.newListener([this, endpoint, option](float val)
 																				 {
-																						setRS2Option(sensor, option, val);
+																						setRS2Option(endpoint, option, val);
 																				 }));
 	 }
-//	 ofLogVerbose() << sensor.get_option_name(opt) << " " << sensor.get_option_description(opt) << " min: "
+//	 ofLogVerbose() << endpoint.get_option_name(opt) << " " << endpoint.get_option_description(opt) << " min: "
 //									<< range.min << " max: " << range.max << " step: " << range.step << " def: " << range.def;
 }
 
@@ -434,28 +451,31 @@ void MTVideoInputSourceRealSense::setRS2Option(rs2::options endpoint, rs2_option
 {
 	 try
 	 {
-	 	 if (endpoint.supports(option)) endpoint.set_option(option, val);
+			if (endpoint.supports(option)) endpoint.set_option(option, val);
 	 }
 			// start with the most specific handlers
 	 catch (const rs2::camera_disconnected_error& e)
 	 {
-			ofLogVerbose("MTVideoInputSourceRealSense") << "Camera was disconnected! Please connect it back  " << endpoint.get_option_name(option) << " " << e.what();
+			ofLogVerbose("MTVideoInputSourceRealSense") << "Camera was disconnected! Please connect it back  "
+																									<< endpoint.get_option_name(option) << " " << e.what();
 			// wait for connect event
 	 }
 // continue with more general cases
 	 catch (const rs2::recoverable_error& e)
 	 {
-			ofLogVerbose("MTVideoInputSourceRealSense") << "Operation failed, please try again " << endpoint.get_option_name(option) << " " << e.what();
+			ofLogVerbose("MTVideoInputSourceRealSense") << "Operation failed, please try again "
+																									<< endpoint.get_option_name(option) << " " << e.what();
 	 }
 // you can also catch "anything else" raised from the library by catching rs2::error
 	 catch (const rs2::error& e)
 	 {
-			ofLogVerbose("MTVideoInputSourceRealSense") << "Some other error occurred! " << endpoint.get_option_name(option) << " " << e.what();
+			ofLogVerbose("MTVideoInputSourceRealSense") << "Some other error occurred! " << endpoint.get_option_name(option)
+																									<< " " << e.what();
 	 }
 	 catch (const std::exception& exc)
 	 {
 			ofLogVerbose("MTVideoInputSourceRealSense") << "Could not set option " <<
-																																						 endpoint.get_option_name(option) << " " << exc.what();
+																									endpoint.get_option_name(option) << " " << exc.what();
 	 }
 }
 

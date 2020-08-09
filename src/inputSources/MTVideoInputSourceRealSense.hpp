@@ -82,6 +82,8 @@ public:
 	 ofParameter<float> tempFilterAlpha;
 	 ofParameter<int> tempFilterDelta;
 
+	 ofParameterGroup colorizerGroup;
+
 	 static rs2::context& getRS2Context()
 	 {
 			static rs2::context context;
@@ -121,7 +123,7 @@ private:
 	 void getSupportedResolutions(rs2::sensor& sensor);
 	 rs2::video_stream_profile getBestProfile(int width, int height, int fps);
 	 std::vector<rs2::video_stream_profile> streamProfiles;
-	 void createParameterFromOption(rs2_option option);
+	 void createParameterFromOption(rs2::options endpoint, rs2_option option, ofParameterGroup& parameters);
 	 void setRS2Option(rs2::options endpoint, rs2_option option, float val);
 
 	 ofThreadChannel<std::pair<rs2_option, float>> optionsChannel;

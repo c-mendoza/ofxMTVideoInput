@@ -19,8 +19,9 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 
 	 parameters.add(isRunning.set("Running", false),
 									mirrorVideo.set("Mirror Video", true),
-									processingWidth.set("Process Width", 320, 120, 1920),
-									processingHeight.set("Process Height", 240, 80, 1080),
+//									processingWidth.set("Process Width", 320, 120, 1920),
+//									processingHeight.set("Process Height", 240, 80, 1080),
+									processingSize.set("Processing Size", 1.0, 0.1, 1.0),
 									useROI.set("Use ROI", false),
 									outputRegion.set("Output Region", ofPath()),
 									inputROI.set("Input ROI", ofPath()));
@@ -38,9 +39,6 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 
 	 isSetup = false;
 
-//Add the listeners
-	 processingWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
-	 processingHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
 
 	 updateTransformInternals();
 
@@ -48,6 +46,13 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 																			 {
 																					updateTransformInternals();
 																			 }));
+
+	 addEventListener(processingSize.newListener([this](float val)
+																							 {
+																									lock();
+																									setProcessingSize(val);
+																									unlock();
+																							 }));
 
 //	addEventListener(outputRegion.newListener([this](ofPath& val) {
 //		updateTransformInternals();
@@ -57,11 +62,32 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 //	}));
 }
 
+void MTVideoInputStream::setProcessingSize(float val)
+{
+//	 lock();
+	 processingSize.setWithoutEventNotifications(val);
+// Transform the inputROI:
+//			auto transform = glm::scale(glm::vec3((float)processingWidth * val, (float)processingHeight * val, 1));
+//			for (auto command : inputROI->getCommands())
+//			{
+//				 command.to = transform * glm::vec4(command.to, 1);
+//			}
+	 processingWidth = round((float) inputWidth * processingSize);
+	 processingHeight = round((float) inputHeight * processingSize);
+	 workingImage.create(processingHeight, processingWidth, CV_8UC1);
+	 processOutput.create(processingHeight, processingWidth, CV_8UC1);
+	 for (const auto& p : videoProcesses)
+	 {
+			p->setProcessSize(processingWidth, processingHeight);
+	 }
+
+	 updateTransformInternals();
+//	 unlock();
+}
+
 MTVideoInputStream::~MTVideoInputStream()
 {
 	 closeStream();
-	 processingWidth.removeListener(this, &MTVideoInputStream::processSizeChanged);
-	 processingHeight.removeListener(this, &MTVideoInputStream::processSizeChanged);
 }
 
 void MTVideoInputStream::threadedFunction()
@@ -90,6 +116,14 @@ void MTVideoInputStream::threadedFunction()
 			inputSource->update();
 			if (inputSource->isFrameNew())
 			{
+				 auto pixels = inputSource->getPixels();
+				 if (pixels.getWidth() != inputWidth || pixels.getHeight() != inputHeight)
+				 {
+						inputWidth = pixels.getWidth();
+						inputHeight = pixels.getHeight();
+						setProcessingSize(processingSize);
+				 }
+
 				 cv::Size processSize(processingWidth, processingHeight);
 				 fpsCounter.newFrame();
 				 videoInputImage = ofxCv::toCv(static_cast<const ofPixels&>(inputSource->getPixels()));
@@ -99,7 +133,7 @@ void MTVideoInputStream::threadedFunction()
 						cv::flip(videoInputImage, videoInputImage, 1);
 				 }
 
-				 if (videoInputImage.cols != processingWidth)
+				 if (processingSize != 1.0f)
 				 {
 						cv::resize(videoInputImage, workingImage, processSize);
 				 }
@@ -160,23 +194,6 @@ void MTVideoInputStream::setup()
 	 processOutput.create(processingHeight, processingWidth, CV_8UC1);
 
 	 updateTransformInternals();
-
-//	 if (inputSource == nullptr)
-//	 {
-//
-//			auto sources = MTVideoInput::Instance().getInputSources();
-//			if (sources.empty())
-//			{
-//				 isSetup = false;
-//				 ofLogError("MTVideoInputStream") << "No input devices available";
-//			}
-//			else
-//			{
-//				 setInputSource(sources[0]);
-//				 inputSource->setup();
-//				 inputSource->start();
-//			}
-//	 }
 
 //Initialize processes
 	 for (const auto& p : videoProcesses)
@@ -270,10 +287,17 @@ void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml
 	 lock();
 	 if (inputSource != nullptr) inputSource->close();
 	 inputSource = MTVideoInput::Instance().createInputSource(sourceInfo);
+	 auto foundDevID = std::string(inputSource->deviceID.get());
 	 if (inputSource != nullptr)
 	 {
 			MTAppFramework::RemoveAllParameters(inputSourcesParameters);
 			inputSource->deserialize(serializer);
+			if (inputSource->deviceID->compare(foundDevID) != 0)
+			{
+				 ofLogWarning("MTVideoInputStream") << "Did not find deviceID " << inputSource->deviceID
+																						<< ". Assigning found deviceID " << foundDevID << " instead.";
+				 inputSource->deviceID.setWithoutEventNotifications(foundDevID);
+			}
 			inputSourcesParameters.add(inputSource->getParameters());
 			inputSource->setup();
 			inputSource->start();
@@ -286,70 +310,11 @@ void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml
 
 }
 
-void MTVideoInputStream::setProcessingResolution(int w, int h)
-{
-	 int bogus = 0;
-	 lock();
-// Transform the inputROI:
-	 auto transform = glm::scale(glm::vec3((float) w / processingWidth, (float) h / processingHeight, 1));
-	 for (auto command : inputROI->getCommands())
-	 {
-			command.to = transform * glm::vec4(command.to, 1);
-	 }
-	 processingWidth.set(w);
-	 processingHeight.set(h);
-	 updateTransformInternals();
-	 unlock();
-	 processSizeChanged(bogus);
-}
-
-void MTVideoInputStream::setCaptureResolution(int w, int h)
-{
-	 inputSource->captureSize = glm::vec2(w, h);
-}
-
-glm::vec2 MTVideoInputStream::getCaptureResolution()
-{
-	 return inputSource->captureSize.get();
-}
-
 #pragma mark EVENTS
 //////////////////////////////////
 //Event Listeners
 //////////////////////////////////
 
-
-void MTVideoInputStream::processSizeChanged(int& changedValue)
-{
-	 enqueueFunction([this, changedValue]
-									 {
-											workingImage.create(processingHeight, processingWidth, CV_8UC1);
-											processOutput.create(processingHeight, processingWidth, CV_8UC1);
-											for (const auto& p : videoProcesses)
-											{
-												 p->setProcessSize(processingWidth, processingHeight);
-											}
-											updateTransformInternals();
-									 });
-}
-
-//void MTVideoInputStream::videoDeviceIDChanged(int& unused)
-//{
-//	if (isThreadRunning())
-//	{
-////		lock();
-//	}
-//	isSetup = initializeVideoCapture();
-//	if (!isSetup)
-//	{
-//		ofLogError(getName()) << "Could not reinitialize video";
-//	}
-//
-//	if (isThreadRunning())
-//	{
-////		unlock();
-//	}
-//}
 
 void MTVideoInputStream::videoPlayerStatusChanged(bool& unused)
 {
@@ -518,7 +483,7 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 				 if (process != nullptr)
 				 {
 						addVideoProcess(process);
-						process->deserialize(processXml);
+						process->deserialize(processParamsXml);
 				 }
 				 else
 				 {
