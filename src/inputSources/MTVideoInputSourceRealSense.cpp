@@ -10,7 +10,11 @@ MTVideoInputSourceRealSense::MTVideoInputSourceRealSense(std::string devID) :
 	 MTVideoInputSource("RealSense Camera", "MTVideoInputSourceRealSense", "RealSense Camera", devID)
 {
 //	 pipeline = rs2::pipeline(MTVideoInputSourceRealSense::getRS2Context());
-	 device = MTVideoInputSourceRealSense::getDeviceWithSerial(deviceID);
+	 bool success = MTVideoInputSourceRealSense::getDeviceWithSerial(deviceID, device);
+	 if (!success) {
+	 	 ofLogError("MTVideoInputSourceRealSense") << "No devices found";
+	 	 return;
+	 }
 //	 outputQueue = rs2::frame_queue();
 //	 postProcessingQueue = rs2::frame
 	 auto sensors = device.query_sensors();
@@ -282,14 +286,13 @@ MTVideoInputSourceRealSense::~MTVideoInputSourceRealSense()
 	 close();
 }
 
-rs2::device MTVideoInputSourceRealSense::getDeviceWithSerial(std::string serial)
+bool MTVideoInputSourceRealSense::getDeviceWithSerial(std::string serial, rs2::device& dev)
 {
-	 rs2::device dev;
 	 auto devices = getRS2Context().query_devices();
 	 if (devices.size() == 0)
 	 {
 			ofLogError("MTVideoInputSourceRealSense") << "No devices found!";
-			return dev;
+			return false;
 	 }
 
 	 auto found = std::find_if(devices.begin(), devices.end(), [&](const rs2::device device)
@@ -311,9 +314,9 @@ rs2::device MTVideoInputSourceRealSense::getDeviceWithSerial(std::string serial)
 			ofLogError("MTVideoInputSourceRealSense") << "Could not find device with serial number " << serial;
 			dev = devices.front();
 			deviceID.setWithoutEventNotifications(dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
-
 	 }
-	 return dev;
+
+	 return true;
 }
 
 void MTVideoInputSourceRealSense::getSupportedResolutions(rs2::sensor& sensor)

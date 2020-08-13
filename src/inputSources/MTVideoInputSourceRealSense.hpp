@@ -90,7 +90,7 @@ public:
 			return context;
 	 }
 
-	 rs2::device getDeviceWithSerial(std::string serial);
+	 bool getDeviceWithSerial(std::string serial, rs2::device& device);
 
 private:
 	 rs2::colorizer colorizer;
