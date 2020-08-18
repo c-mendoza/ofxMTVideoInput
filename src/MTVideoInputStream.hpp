@@ -144,6 +144,7 @@ private:
 	  * input source resolution.
 	  */
 	 void setProcessingSize(float size);
+	 float prevProcessingSize = 1.0f;
 
 public:
 	 void setInputSource(MTVideoInputSourceInfo sourceInf);
