@@ -10,21 +10,6 @@
 #include "librealsense2/rs.hpp"
 #include <unordered_map>
 
-/**
-Class to encapsulate a filter alongside its options
-*/
-class RSFilter : public MTModel
-{
-public:
-	 RSFilter(const std::string name, rs2::filter& filter);
-	 ofParameter<std::string> filter_name;                                   //Friendly name of the filter
-	 ofParameter<bool> enabled;
-
-	 rs2::filter& filter;                                       //The filter in use
-//	std::map<rs2_option, filter_slider_ui> supported_options;  //maps from an option supported by the filter, to the corresponding slider
-	 std::atomic_bool is_enabled;                               //A boolean controlled by the user that determines whether to apply the filter or not
-};
-
 namespace ofxMTVideoInput
 {
 	 typedef std::pair<int, int> resolution;

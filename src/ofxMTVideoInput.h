@@ -11,7 +11,6 @@
 
 class MTVideoInputStreamEventArgs;
 class MTVideoInputStream;
-class MTVideoProcessEventArgs;
 class MTVideoInputSource;
 
 struct MTVideoInputSourceInfo
