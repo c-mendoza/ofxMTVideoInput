@@ -65,23 +65,24 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 void MTVideoInputStream::setProcessingSize(float val)
 {
 //	 lock();
-	 processingSize.setWithoutEventNotifications(val);
+	processingSize.setWithoutEventNotifications(val);
+	float change = val / prevProcessingSize;
+	prevProcessingSize = val;
 // Transform the inputROI:
-//			auto transform = glm::scale(glm::vec3((float)processingWidth * val, (float)processingHeight * val, 1));
-//			for (auto command : inputROI->getCommands())
-//			{
-//				 command.to = transform * glm::vec4(command.to, 1);
-//			}
-	 processingWidth = round((float) inputWidth * processingSize);
-	 processingHeight = round((float) inputHeight * processingSize);
-	 workingImage.create(processingHeight, processingWidth, CV_8UC1);
-	 processOutput.create(processingHeight, processingWidth, CV_8UC1);
-	 for (const auto& p : videoProcesses)
-	 {
-			p->setProcessSize(processingWidth, processingHeight);
-	 }
+	auto newPath = ofPath(inputROI.get());
+	newPath.scale(change, change);
+	inputROI.set(newPath);
 
-	 updateTransformInternals();
+	processingWidth = floor((float) inputWidth * processingSize);
+	processingHeight = floor((float) inputHeight * processingSize);
+	workingImage.create(processingHeight, processingWidth, CV_8UC1);
+	processOutput.create(processingHeight, processingWidth, CV_8UC1);
+	for (const auto& p : videoProcesses)
+	{
+		p->setProcessSize(processingWidth, processingHeight);
+	}
+
+	updateTransformInternals();
 //	 unlock();
 }
 
