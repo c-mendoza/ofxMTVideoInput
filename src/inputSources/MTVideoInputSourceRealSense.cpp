@@ -13,6 +13,8 @@ MTVideoInputSourceRealSense::MTVideoInputSourceRealSense(std::string devID) :
 	 bool success = MTVideoInputSourceRealSense::getDeviceWithSerial(deviceID, device);
 	 if (!success) {
 	 	 ofLogError("MTVideoInputSourceRealSense") << "No devices found";
+	 	 // Flag that the input source is not set up so that we can detect the failure in createInputSource:
+	 	 isSetupFlag = false;
 	 	 return;
 	 }
 //	 outputQueue = rs2::frame_queue();

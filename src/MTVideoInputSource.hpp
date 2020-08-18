@@ -66,8 +66,12 @@ public:
 
 	 void deserialize(ofXml& serializer) override;
 
+	 bool isSetup()
+	 { return isSetupFlag; }
+
 protected:
 	 bool isDeserializing = false;
+	 bool isSetupFlag = true;
 private:
 	 std::atomic_bool running;
 };
