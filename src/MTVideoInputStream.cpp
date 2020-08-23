@@ -10,50 +10,49 @@
 #include <ofMain.h>
 #include "ofxMTVideoInput.h"
 #include "MTApp.hpp"
+#include "MTVideoInputSource.hpp"
+#include "MTVideoInputStream.hpp"
 
 
 MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 {
 
 	parameters.add(isRunning.set("Running", false),
-				   mirrorVideo.set("Mirror Video", true),
-				   videoInputDeviceID.set("Capture Device", 0, 0, 20),
-				   videoWidth.set("Video Width", 320, 1, 1920),
-				   videoHeight.set("Video Height", 240, 1, 1080),
-				   useVideoPlayer.set("Use Player", false),
-				   videoFilePath.set("File", ""),
-				   processingWidth.set("Process Width", 320, 120, 1920),
-				   processingHeight.set("Process Height", 240, 80, 1080),
-				   useROI.set("Use ROI", false),
-				   outputRegion.set("Output Region", ofPath()),
-				   inputROI.set("Input ROI", ofPath()));
+						mirrorVideo.set("Mirror Video", true),
+//									processingWidth.set("Process Width", 320, 120, 1920),
+//									processingHeight.set("Process Height", 240, 80, 1080),
+						processingSize.set("Processing Size", 1.0, 0.1, 1.0),
+						useROI.set("Use ROI", false),
+						outputRegion.set("Output Region", ofPath()),
+						inputROI.set("Input ROI", ofPath()));
 	processesParameters.setName("Video Processes");
-	parameters.add(processesParameters);
+	inputSourcesParameters.setName("Input Sources");
+	parameters.add(processesParameters, inputSourcesParameters);
 
-	// Add some defaults for the regions:
+// Add some defaults for the regions:
 	ofPath outDef;
 	outDef.rectangle(0, 0, 1280, 720);
 	outputRegion = outDef;
 	ofPath inDef;
-	inDef.rectangle(0, 0, videoWidth, videoHeight);
+	inDef.rectangle(0, 0, 320, 240);
 	inputROI = inDef;
 
 	isSetup = false;
 
-	//Add the listeners
-	processingWidth.addListener(this, &MTVideoInputStream::processSizeChanged);
-	processingHeight.addListener(this, &MTVideoInputStream::processSizeChanged);
-
-	videoInputDeviceID.addListener(this, &MTVideoInputStream::videoDeviceIDChanged);
-	useVideoPlayer.addListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
-	videoFilePath.addListener(this, &MTVideoInputStream::videoFilePathChanged);
 
 	updateTransformInternals();
 
 	addEventListener(useROI.newListener([this](bool& val)
-										{
-											updateTransformInternals();
-										}));
+													{
+														updateTransformInternals();
+													}));
+
+	addEventListener(processingSize.newListener([this](float val)
+															  {
+																  lock();
+																  setProcessingSize(val);
+																  unlock();
+															  }));
 
 //	addEventListener(outputRegion.newListener([this](ofPath& val) {
 //		updateTransformInternals();
@@ -63,25 +62,34 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 //	}));
 }
 
+void MTVideoInputStream::setProcessingSize(float val)
+{
+//	 lock();
+	processingSize.setWithoutEventNotifications(val);
+	float change = val / prevProcessingSize;
+	prevProcessingSize = val;
+// Transform the inputROI:
+	auto newPath = ofPath(inputROI.get());
+	newPath.scale(change, change);
+	inputROI.set(newPath);
+
+	processingWidth = floor((float) inputWidth * processingSize);
+	processingHeight = floor((float) inputHeight * processingSize);
+	workingImage.create(processingHeight, processingWidth, CV_8UC1);
+	processOutput.create(processingHeight, processingWidth, CV_8UC1);
+	for (const auto& p : videoProcesses)
+	{
+		p->setProcessSize(processingWidth, processingHeight);
+	}
+
+	updateTransformInternals();
+//	 unlock();
+}
+
 MTVideoInputStream::~MTVideoInputStream()
 {
 	closeStream();
-	//TODO:
-//	App::sharedApp->getOMModel()->outputWidth.removeListener(this, &MTVideoInputStream::documentSizeChanged);
-//	App::sharedApp->getOMModel()->outputHeight.removeListener(this, &MTVideoInputStream::documentSizeChanged);
-	processingWidth.removeListener(this, &MTVideoInputStream::processSizeChanged);
-	processingHeight.removeListener(this, &MTVideoInputStream::processSizeChanged);
-	videoInputDeviceID.removeListener(this, &MTVideoInputStream::videoDeviceIDChanged);
-	useVideoPlayer.removeListener(this, &MTVideoInputStream::videoPlayerStatusChanged);
-	videoFilePath.removeListener(this, &MTVideoInputStream::videoFilePathChanged);
-
 }
-
-
-#pragma mark THREAD
-//////////////////////////////////
-//Thread
-//////////////////////////////////
 
 void MTVideoInputStream::threadedFunction()
 {
@@ -91,7 +99,7 @@ void MTVideoInputStream::threadedFunction()
 
 	while (isThreadRunning())
 	{
-		if (!isSetup)
+		if (!isSetup || inputSource == nullptr)
 		{
 			yield();
 			continue;
@@ -106,19 +114,27 @@ void MTVideoInputStream::threadedFunction()
 			functionQueue.pop();
 		}
 
-		videoGrabber.update();
-		if (videoGrabber.isFrameNew())
+		inputSource->update();
+		if (inputSource->isFrameNew())
 		{
+			auto pixels = inputSource->getPixels();
+			if (pixels.getWidth() != inputWidth || pixels.getHeight() != inputHeight)
+			{
+				inputWidth = pixels.getWidth();
+				inputHeight = pixels.getHeight();
+				setProcessingSize(processingSize);
+			}
+
 			cv::Size processSize(processingWidth, processingHeight);
 			fpsCounter.newFrame();
-			videoInputImage = ofxCv::toCv(static_cast<const ofPixels&>(videoGrabber.getPixels()));
+			videoInputImage = ofxCv::toCv(static_cast<const ofPixels&>(inputSource->getPixels()));
 
 			if (mirrorVideo.get())
 			{
 				cv::flip(videoInputImage, videoInputImage, 1);
 			}
 
-			if (videoInputImage.cols != processingWidth)
+			if (processingSize != 1.0f)
 			{
 				cv::resize(videoInputImage, workingImage, processSize);
 			}
@@ -131,9 +147,9 @@ void MTVideoInputStream::threadedFunction()
 			{
 				cv::Mat result;
 				cv::warpPerspective(workingImage,
-									result,
-									roiToProcessTransform,
-									processSize);
+										  result,
+										  roiToProcessTransform,
+										  processSize);
 				workingImage = result;
 			}
 
@@ -170,51 +186,17 @@ void MTVideoInputStream::threadedFunction()
 		unlock();
 	}
 
-	ofLogVerbose("MTVideoInput") <<  "Thread complete";
+	ofLogVerbose("MTVideoInput") << "Thread complete";
 }
-
-#pragma mark CONTROL
-//////////////////////////////////
-//Control
-//////////////////////////////////
 
 void MTVideoInputStream::setup()
 {
 	workingImage.create(processingHeight, processingWidth, CV_8UC1);
 	processOutput.create(processingHeight, processingWidth, CV_8UC1);
 
-//	if (outputRegion->getCommands().size() < 5)
-//	{
-////        auto model = App::sharedApp->getOMModel();
-//		outputRegion->setMode(ofPath::COMMANDS);
-//		outputRegion->clear();
-//		outputRegion->moveTo(0, 0);
-//		outputRegion->lineTo(processingWidth, 0);
-//		outputRegion->lineTo(processingWidth, processingHeight);
-//		outputRegion->lineTo(0, processingHeight);
-//	}
-//	useROI = false;
 	updateTransformInternals();
 
-	isSetup = true;
-
-	//Initialize video
-	if (useVideoPlayer == false)
-	{
-		isSetup = initializeVideoCapture();
-
-	}
-	else
-	{
-		if (!(isSetup = videoPlayer.load(videoFilePath)))
-		{
-			ofSystemAlertDialog("Error opening file: " + videoFilePath.get());
-		}
-
-		//set the size of processes etc.
-	}
-
-	//Initialize processes
+//Initialize processes
 	for (const auto& p : videoProcesses)
 	{
 		p->setProcessSize(processingWidth, processingHeight);
@@ -223,32 +205,6 @@ void MTVideoInputStream::setup()
 	}
 
 	isSetup = true;
-}
-
-bool MTVideoInputStream::initializeVideoCapture()
-{
-	auto devices = videoGrabber.listDevices();
-
-	for (auto& device : devices)
-	{
-		if (device.bAvailable)
-		{
-			ofLogNotice() << "sysId: " << device.serialID << "id: " << device.id << ": "
-						  << device.deviceName;
-		}
-		else
-		{
-			ofLogNotice() << device.id << ": " << device.deviceName << " - unavailable ";
-		}
-	}
-
-
-	videoGrabber.close();
-	videoGrabber.setDeviceID(videoInputDeviceID);
-	videoGrabber.setDesiredFrameRate(30);
-	updateTransformInternals();
-	bool result = videoGrabber.setup(videoWidth, videoHeight, false);
-	return result;
 }
 
 void MTVideoInputStream::startStream()
@@ -267,8 +223,7 @@ void MTVideoInputStream::stopStream()
 void MTVideoInputStream::closeStream()
 {
 	stopStream();
-	videoGrabber.close();
-	videoPlayer.close();
+	if (inputSource != nullptr) inputSource->close();
 }
 
 void MTVideoInputStream::setStreamRunning(bool _isRunning)
@@ -309,101 +264,73 @@ cv::Mat MTVideoInputStream::getOutputToProcessTransform()
 	return outputToProcessTransform.clone();
 }
 
-//void MTVideoInputStream::setOutputRegion(ofPath path)
-//{
-//	lock();
-////	enqueueFunction([this, path]
-////					{
-//						outputRegion->clear();
-//						outputRegion->append(path);
-//						updateTransformInternals();
-////					});
-//	unlock();
-//}
-
-#pragma mark UTILITY
-//////////////////////////////////
-//Utility
-//////////////////////////////////
-
-void MTVideoInputStream::setProcessingResolution(int w, int h)
+void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo)
 {
-	int bogus = 0;
 	lock();
-	// Transform the inputROI:
-	auto transform = glm::scale(glm::vec3((float) w / processingWidth, (float) h / processingHeight, 1));
-	for (auto command : inputROI->getCommands())
+	if (inputSource != nullptr) inputSource->close();
+	inputSource = MTVideoInput::Instance().createInputSource(sourceInfo);
+	if (inputSource != nullptr)
 	{
-		command.to = transform * glm::vec4(command.to, 1);
+		MTAppFramework::RemoveAllParameters(inputSourcesParameters);
+		inputSourcesParameters.add(inputSource->getParameters());
+		inputSource->setup();
+		inputSource->start();
 	}
-	processingWidth.set(w);
-	processingHeight.set(h);
-	updateTransformInternals();
+	else
+	{
+		ofLogError("MTVideoInputStream") << "Could not find input source with type " << sourceInfo.type;
+	}
 	unlock();
-	processSizeChanged(bogus);
 }
 
-void MTVideoInputStream::setCaptureResolution(int w, int h)
+void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml& serializer)
 {
-	videoWidth.setWithoutEventNotifications(w);
-	videoHeight.setWithoutEventNotifications(h);
-	initializeVideoCapture();
+	lock();
+	if (inputSource != nullptr) inputSource->close();
+	inputSource = MTVideoInput::Instance().createInputSource(sourceInfo);
+	if (inputSource != nullptr)
+	{
+		// This is the deviceID prior to deserialization:
+		auto foundDevID = std::string(inputSource->deviceID.get());
+		MTAppFramework::RemoveAllParameters(inputSourcesParameters);
+		inputSource->deserialize(serializer);
+		if (inputSource->deviceID->compare(foundDevID) != 0)
+		{
+			ofLogWarning("MTVideoInputStream") << "Did not find deviceID " << inputSource->deviceID
+														  << ". Assigning found deviceID " << foundDevID << " instead.";
+			inputSource->deviceID.setWithoutEventNotifications(foundDevID);
+		}
+		inputSourcesParameters.add(inputSource->getParameters());
+		inputSource->setup();
+		inputSource->start();
+	}
+	else
+	{
+		ofLogError("MTVideoInputStream") << "Could not find input source with type " << sourceInfo.type;
+	}
+	unlock();
+
 }
 
-
-#pragma mark EVENTS
 //////////////////////////////////
 //Event Listeners
 //////////////////////////////////
 
 
-void MTVideoInputStream::processSizeChanged(int& changedValue)
-{
-	enqueueFunction([this, changedValue]
-					{
-						workingImage.create(processingHeight, processingWidth, CV_8UC1);
-						processOutput.create(processingHeight, processingWidth, CV_8UC1);
-						for (const auto& p : videoProcesses)
-						{
-							p->setProcessSize(processingWidth, processingHeight);
-						}
-						updateTransformInternals();
-					});
-}
-
-void MTVideoInputStream::videoDeviceIDChanged(int& unused)
-{
-	if (isThreadRunning())
-	{
-//		lock();
-	}
-	isSetup = initializeVideoCapture();
-	if (!isSetup)
-	{
-		ofLogError(getName()) << "Could not reinitialize video";
-	}
-
-	if (isThreadRunning())
-	{
-//		unlock();
-	}
-}
-
 void MTVideoInputStream::videoPlayerStatusChanged(bool& unused)
 {
-	//for now:
+//for now:
 	isRunning = false;
 	isSetup = false;
 }
 
 void MTVideoInputStream::videoFilePathChanged(std::string& newPath)
 {
-	//for now:
+//for now:
 	isRunning = false;
 	isSetup = false;
 }
 
-#pragma mark DATA CONTROL
 //////////////////////////////////
 //Data Handling
 //////////////////////////////////
@@ -418,7 +345,8 @@ void MTVideoInputStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> 
 	lock();
 	process->setProcessSize(processingWidth, processingHeight);
 	process->setup();
-	int count = std::count_if(videoProcesses.begin(), videoProcesses.end(), [&process](std::shared_ptr<MTVideoProcess> p) {
+	int count = std::count_if(videoProcesses.begin(), videoProcesses.end(), [&process](std::shared_ptr<MTVideoProcess> p)
+	{
 		if (p->getName().find(process->getName()) != string::npos)
 		{
 			return true;
@@ -443,7 +371,7 @@ void MTVideoInputStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> 
 
 void MTVideoInputStream::swapProcesses(size_t index1, size_t index2)
 {
-	// Some basic error checking:
+// Some basic error checking:
 	if (index1 >= videoProcesses.size() || index2 >= videoProcesses.size())
 	{
 		ofLogError(__FUNCTION__) << "Index out of range";
@@ -487,7 +415,7 @@ int MTVideoInputStream::getVideoProcessCount()
 
 bool MTVideoInputStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> process)
 {
-	std::unique_lock<std::mutex> (this->mutex);
+	std::unique_lock<std::mutex> uniqueLock(this->mutex);
 	auto iter = std::find(videoProcesses.begin(), videoProcesses.end(), process);
 	if (iter != videoProcesses.end())
 	{
@@ -510,8 +438,6 @@ void MTVideoInputStream::removeAllVideoProcesses()
 	videoProcesses.clear();
 }
 
-
-#pragma mark OVERRIDES
 //////////////////////////////////
 //Class Overrides
 //////////////////////////////////
@@ -533,7 +459,8 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		return;
 	}
 
-	MTModel::deserialize(thisChainXml);
+	auto chainParent = thisChainXml.getParent();
+	MTModel::deserialize(chainParent);
 
 	auto processParamsXml = serializer.findFirst("//" + getName() + "/" + "Video_Processes");
 
@@ -551,11 +478,11 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		if (auto typenameXml = processXml.getChild("Process_Type_Name"))
 		{
 			std::shared_ptr<MTVideoProcess> process = MTVideoInput::Instance().createVideoProcess(
-					typenameXml.getValue());
+				typenameXml.getValue());
 			if (process != nullptr)
 			{
 				addVideoProcess(process);
-				process->deserialize(processXml);
+				process->deserialize(processParamsXml);
 			}
 			else
 			{
@@ -568,14 +495,40 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		}
 	}
 
+	auto inputParamsXml = serializer.findFirst("//" + getName() + "/" + inputSourcesParameters.getEscapedName());
+
+	if (!inputParamsXml)
+	{
+		ofLogWarning() << "MTVideoInputStream: No input sources group in document.";
+	}
+	else
+	{
+		auto deviceXml = inputParamsXml.getFirstChild();
+
+		if (!deviceXml)
+		{
+			ofLogWarning() << "MTVideoInputStream: No input sources in file.";
+		}
+		else
+		{
+			MTVideoInputSourceInfo info;
+			info.deviceID = deviceXml.getChild("Device_ID").getValue();
+			info.type = deviceXml.getChild("Input_Type_Name").getValue();
+			info.name = deviceXml.getName();
+//				 auto p = deviceXml.getParent();
+			setInputSource(info, inputParamsXml);
+
+		}
+	}
+
 	updateTransformInternals();
 
-	if (wasRunning) {
+	if (wasRunning)
+	{
 		startStream();
 	}
 }
 
-#pragma mark INTERNALS
 //////////////////////////////////
 //Internals
 //////////////////////////////////
@@ -644,7 +597,7 @@ void MTVideoInputStream::syncParameters()
 {
 	parameters.remove(processesParameters);
 	processesParameters.clear();
-	for(auto p : videoProcesses)
+	for (auto p : videoProcesses)
 	{
 		processesParameters.add(p->getParameters());
 	}
