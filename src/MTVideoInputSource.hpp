@@ -9,7 +9,7 @@
 #include "MTModel.hpp"
 #include "ofxCv.h"
 #include "registry.h"
-
+#include "ImHelpers.h"
 
 class MTCaptureEventArgs;
 
