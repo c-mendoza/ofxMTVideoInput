@@ -312,7 +312,6 @@ void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml
 
 }
 
-#pragma mark EVENTS
 //////////////////////////////////
 //Event Listeners
 //////////////////////////////////
@@ -332,7 +331,6 @@ void MTVideoInputStream::videoFilePathChanged(std::string& newPath)
 	isSetup = false;
 }
 
-#pragma mark DATA CONTROL
 //////////////////////////////////
 //Data Handling
 //////////////////////////////////
@@ -440,8 +438,6 @@ void MTVideoInputStream::removeAllVideoProcesses()
 	videoProcesses.clear();
 }
 
-
-#pragma mark OVERRIDES
 //////////////////////////////////
 //Class Overrides
 //////////////////////////////////
@@ -463,7 +459,8 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		return;
 	}
 
-	MTModel::deserialize(thisChainXml);
+	auto chainParent = thisChainXml.getParent();
+	MTModel::deserialize(chainParent);
 
 	auto processParamsXml = serializer.findFirst("//" + getName() + "/" + "Video_Processes");
 
@@ -532,7 +529,6 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 	}
 }
 
-#pragma mark INTERNALS
 //////////////////////////////////
 //Internals
 //////////////////////////////////
