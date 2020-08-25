@@ -44,14 +44,16 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 
 	addEventListener(useROI.newListener([this](bool& val)
 													{
-														updateTransformInternals();
+                                                        enqueueFunction([this]() {
+                                                            updateTransformInternals();
+                                                        });
 													}));
 
 	addEventListener(processingSize.newListener([this](float val)
 															  {
-																  lock();
-																  setProcessingSize(val);
-																  unlock();
+                                                                  enqueueFunction([this, val]() {
+                                                                      setProcessingSize(val);
+                                                                  });
 															  }));
 
 //	addEventListener(outputRegion.newListener([this](ofPath& val) {
@@ -61,6 +63,7 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 //		updateTransformInternals();
 //	}));
 }
+
 
 void MTVideoInputStream::setProcessingSize(float val)
 {
@@ -211,7 +214,7 @@ void MTVideoInputStream::startStream()
 {
 	if (!isSetup) setup();
 	isRunning = true;
-	startThread();
+	if (!isThreadRunning()) startThread();
 }
 
 void MTVideoInputStream::stopStream()
@@ -266,7 +269,9 @@ cv::Mat MTVideoInputStream::getOutputToProcessTransform()
 
 void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo)
 {
-	lock();
+	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
+	while (!tryLock()){}
+
 	if (inputSource != nullptr) inputSource->close();
 	inputSource = MTVideoInput::Instance().createInputSource(sourceInfo);
 	if (inputSource != nullptr)
@@ -285,7 +290,9 @@ void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo)
 
 void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml& serializer)
 {
-	lock();
+	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
+	while (!tryLock()){}
+
 	if (inputSource != nullptr) inputSource->close();
 	inputSource = MTVideoInput::Instance().createInputSource(sourceInfo);
 	if (inputSource != nullptr)
@@ -342,7 +349,9 @@ void MTVideoInputStream::addVideoProcess(std::shared_ptr<MTVideoProcess> process
 
 void MTVideoInputStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, unsigned long index)
 {
-	lock();
+	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
+	while (!tryLock()){}
+
 	process->setProcessSize(processingWidth, processingHeight);
 	process->setup();
 	int count = std::count_if(videoProcesses.begin(), videoProcesses.end(), [&process](std::shared_ptr<MTVideoProcess> p)
@@ -377,8 +386,9 @@ void MTVideoInputStream::swapProcesses(size_t index1, size_t index2)
 		ofLogError(__FUNCTION__) << "Index out of range";
 		return;
 	}
+	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
+	while (!tryLock()){}
 
-	lock();
 	videoProcesses.at(index1)->setup();
 	videoProcesses.at(index2)->setup();
 	std::swap(videoProcesses.at(index1), videoProcesses.at(index2));
@@ -415,7 +425,9 @@ int MTVideoInputStream::getVideoProcessCount()
 
 bool MTVideoInputStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> process)
 {
-	std::unique_lock<std::mutex> uniqueLock(this->mutex);
+	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
+	while (!tryLock()){}
+
 	auto iter = std::find(videoProcesses.begin(), videoProcesses.end(), process);
 	if (iter != videoProcesses.end())
 	{
@@ -423,8 +435,10 @@ bool MTVideoInputStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> proc
 		syncParameters();
 //		processesParameters.remove()  <- TODO
 		processRemovedEvent.notify(this, process);
+		unlock();
 		return true;
 	}
+	unlock();
 	return false;
 }
 
@@ -435,7 +449,9 @@ bool MTVideoInputStream::removeVideoProcessAtIndex(int index)
 
 void MTVideoInputStream::removeAllVideoProcesses()
 {
+	while (!tryLock()){}
 	videoProcesses.clear();
+	unlock();
 }
 
 //////////////////////////////////

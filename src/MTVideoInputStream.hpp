@@ -122,18 +122,18 @@ public:
 
 	 void setInputROI(ofPath& path)
 	 {
-			lock();
-			inputROI = path;
-			updateTransformInternals();
-			unlock();
+            enqueueFunction([this, path]() {
+                inputROI = path;
+                updateTransformInternals();
+            });
 	 }
 
 	 void setOutputRegion(ofPath& path)
 	 {
-			lock();
-			outputRegion = path;
-			updateTransformInternals();
-			unlock();
+         enqueueFunction([this, path]() {
+             outputRegion = path;
+             updateTransformInternals();
+         });
 	 }
 
 private:
