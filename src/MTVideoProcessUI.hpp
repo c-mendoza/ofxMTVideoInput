@@ -21,9 +21,12 @@ public:
 
 	virtual void draw(){}
 	virtual void draw(ofxImGui::Settings& settings);
+	std::string getName() { return name; };
 
 protected:
 	std::weak_ptr<MTVideoProcess> videoProcess;
+private:
+	std::string name;
 };
 
 class MTVideoProcessUIWithImage : public MTVideoProcessUI

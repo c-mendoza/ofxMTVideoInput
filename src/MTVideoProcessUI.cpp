@@ -10,6 +10,7 @@
 MTVideoProcessUI::MTVideoProcessUI(std::shared_ptr<MTVideoProcess> videoProcess)
 {
 	this->videoProcess = videoProcess;
+	name = videoProcess->getName();
 }
 
 void MTVideoProcessUI::draw(ofxImGui::Settings& settings)
