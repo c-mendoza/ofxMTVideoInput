@@ -39,7 +39,7 @@ void MTVideoInput::init()
 			{
 				 MTVideoInputSourceInfo info;
 				 info.name = device.deviceName;
-				 info.deviceID = device.id;
+				 info.deviceID = ofToString(device.id);
 				 info.type = "MTVideoInputSourceOFGrabber";
 				 sources.push_back(info);
 			}
