@@ -65,13 +65,11 @@ void MTMorphologyVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
 	auto vp = videoProcess.lock();
 	auto mp = std::dynamic_pointer_cast<MTMorphologyVideoProcess>(vp);
-	ofxImGui::BeginTree(vp->getName(), settings);
 	MTVideoProcessUIWithImage::draw(settings);
 	ofxImGui::AddParameter<bool>(mp->isActive);
 	ofxImGui::AddRadio(mp->mode, modeLabels);
 	ofxImGui::AddParameter<int>(mp->size);
 	ofxImGui::AddParameter<int>(mp->shapeType);
-	ofxImGui::EndTree(settings);
 }
 
 MTMorphologyVideoProcessUI::MTMorphologyVideoProcessUI(const std::shared_ptr<MTVideoProcess>& videoProcess,

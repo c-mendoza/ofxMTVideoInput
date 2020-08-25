@@ -55,12 +55,10 @@ MTThresholdVideoProcessUI::MTThresholdVideoProcessUI(const std::shared_ptr<MTVid
 void MTThresholdVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
 	auto vp = videoProcess.lock();
-	ofxImGui::BeginTree(vp->getName(), settings);
 	MTVideoProcessUIWithImage::draw(settings);
 	for (auto& param : vp->getParameters())
 	{
 		ofxImGui::AddParameter(param);
 	}
-	ofxImGui::EndTree(settings);
 }
 

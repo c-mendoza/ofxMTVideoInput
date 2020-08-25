@@ -92,13 +92,9 @@ MTBackgroundSubstractionVideoProcessUI(const std::shared_ptr<MTVideoProcess>& vi
 void MTBackgroundSubstractionVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
 	auto vp = videoProcess.lock();
-//	ImGui::PushID(vp.get());
-	ofxImGui::BeginTree(vp->getName(), settings);
 	MTVideoProcessUIWithImage::draw(settings);
 //	for (auto& param : vp->getParameters())
 //	{
 		ofxImGui::AddGroup(vp->getParameters(), settings);
 //	}
-	ofxImGui::EndTree(settings);
-//	ImGui::PopID();
 }

@@ -181,12 +181,10 @@ MTImageAdjustmentsVideoProcessUI::MTImageAdjustmentsVideoProcessUI(const std::sh
 void MTImageAdjustmentsVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
 	auto vp = videoProcess.lock();
-	ofxImGui::BeginTree(vp->getName(), settings);
 	MTVideoProcessUIWithImage::draw(settings);
 	for (auto& param : vp->getParameters())
 	{
 		ofxImGui::AddParameter(param);
 	}
 //	MTVideoProcessUI::draw(settings);
-	ofxImGui::EndTree(settings);
 }
