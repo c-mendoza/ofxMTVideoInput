@@ -6,10 +6,11 @@
 #include "librealsense2/hpp/rs_processing.hpp"
 #include "librealsense2/hpp/rs_device.hpp"
 
+std::vector<std::shared_ptr<rs2::device>> MTVideoInputSourceRealSense::devices;
+
 MTVideoInputSourceRealSense::MTVideoInputSourceRealSense(std::string devID) :
 		MTVideoInputSource("RealSense Camera", "MTVideoInputSourceRealSense", "RealSense Camera", devID)
 {
-//	 pipeline = rs2::pipeline(MTVideoInputSourceRealSense::getRS2Context());
 	bool success = MTVideoInputSourceRealSense::getDeviceWithSerial(deviceID, device);
 	if (!success)
 	{
@@ -18,8 +19,7 @@ MTVideoInputSourceRealSense::MTVideoInputSourceRealSense(std::string devID) :
 		isSetupFlag = false;
 		return;
 	}
-//	 outputQueue = rs2::frame_queue();
-//	 postProcessingQueue = rs2::frame
+
 	auto sensors = device.query_sensors();
 	for (auto s : sensors)
 	{
@@ -243,15 +243,6 @@ void MTVideoInputSourceRealSense::setup(int width, int height, int framerate, st
 	close();
 	ofLogVerbose("MTVideoInputSourceRealSense") << "SETUP - " << this->deviceID.get();
 
-//	 rs2::config cfg;
-//	 cfg.enable_stream();
-//	 cfg.enable_device(this->deviceID);
-//	 cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, framerate);
-//	 device.query_sensors()[0].set_option() ///
-//	 auto profile = pipeline.start(cfg);
-//	 auto frameset = pipeline.wait_for_frames();
-//	 auto dev = profile.get_device();
-//	 auto df = frameset.get_depth_frame();
 	auto profile = getBestProfile(width, height, framerate);
 	sensor.open(profile);
 	pixels.allocate(profile.width(), profile.height(), ofImageType::OF_IMAGE_COLOR);
@@ -296,7 +287,16 @@ MTVideoInputSourceRealSense::~MTVideoInputSourceRealSense()
 
 bool MTVideoInputSourceRealSense::getDeviceWithSerial(std::string serial, rs2::device& dev)
 {
-	auto devices = getRS2Context().query_devices();
+	// Populate the static devices array:
+	if (devices.size() == 0)
+	{
+		auto devList = getRS2Context().query_devices();
+		for (auto dev : devList)
+		{
+			devices.emplace_back(std::make_shared<rs2::device>(dev));
+		}
+	}
+
 	if (devices.size() == 0)
 	{
 		ofLogError("MTVideoInputSourceRealSense") << "No devices found!";
@@ -308,11 +308,11 @@ bool MTVideoInputSourceRealSense::getDeviceWithSerial(std::string serial, rs2::d
 	{
 		for (auto device : devices)
 		{
-			std::string currentSerial((device).get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
+			std::string currentSerial((device)->get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
 			if (currentSerial == serial)
 			{
 				found = true;
-				dev = device;
+				dev = *device;
 				return true;
 			}
 		}
@@ -324,7 +324,7 @@ bool MTVideoInputSourceRealSense::getDeviceWithSerial(std::string serial, rs2::d
 
 
 	ofLogError("MTVideoInputSourceRealSense") << "Could not find device with serial number " << serial;
-	dev = devices.front();
+	dev = *devices.front();
 	deviceID.setWithoutEventNotifications(dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
 	return false;
 }
