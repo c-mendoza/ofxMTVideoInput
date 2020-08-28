@@ -14,13 +14,9 @@ public:
 	SpatialCam(std::string spatialCamId);
 	~SpatialCam();
 
-	ofParameter<float> x;
-	ofParameter<float> y;
-	ofParameter<float> z;
-	ofParameter<float> rx;
-	ofParameter<float> ry;
-	ofParameter<float> rz;
-	ofParameter<std::string> serialId;
+	ofParameter<glm::vec3> position;
+	ofParameter<glm::vec3> rotation;
+	ofReadOnlyParameter<SpatialCamp, std::string> serialId;
 
 	void getDepthFrame();
 	bool setup(std::string serialId);

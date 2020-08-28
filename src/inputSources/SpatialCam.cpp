@@ -6,7 +6,12 @@
 
 SpatialCam::SpatialCam(std::string spatialCamId) : MTModel("SpatialCam_" + spatialCamId)
 {
-
+	auto zerov = glm::vec3(0,0,0);
+	parameters.add(
+		position.set("Position", zerov),
+		rotation.set("Rotation", zerov, glm::vec3(TWO_PI, TWO_PI, TWO_PI));
+		serialId.set("SerialID", "")
+		);
 }
 
 SpatialCam::~SpatialCam()
@@ -23,6 +28,7 @@ bool SpatialCam::setup(std::string serialId)
 	if (cam)
 	{
 		depthCamera = std::dynamic_pointer_cast<MTVideoInputSourceRealSense>(cam);
+		this->serialId = serialId;
 		_isSetup = true;
 		return true;
 	}
@@ -35,7 +41,7 @@ bool SpatialCam::setup(std::string serialId)
 
 bool SpatialCam::isSetup()
 {
-	return false;
+	return _isSetup;
 }
 
 void SpatialCam::serialize(ofXml& serializer)
@@ -46,4 +52,5 @@ void SpatialCam::serialize(ofXml& serializer)
 void SpatialCam::deserialize(ofXml& serializer)
 {
 	MTModel::deserialize(serializer);
+	
 }
