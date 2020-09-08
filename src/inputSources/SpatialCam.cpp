@@ -9,8 +9,8 @@ SpatialCam::SpatialCam(std::string spatialCamId) : MTModel("SpatialCam_" + spati
 	auto zerov = glm::vec3(0,0,0);
 	parameters.add(
 		position.set("Position", zerov),
-		rotation.set("Rotation", zerov, glm::vec3(TWO_PI, TWO_PI, TWO_PI));
-		serialId.set("SerialID", "")
+		rotation.set("Rotation", zerov, zerov, glm::vec3(TWO_PI, TWO_PI, TWO_PI)),
+		serialId.set("RS Serial ID", "")
 		);
 }
 
@@ -52,5 +52,9 @@ void SpatialCam::serialize(ofXml& serializer)
 void SpatialCam::deserialize(ofXml& serializer)
 {
 	MTModel::deserialize(serializer);
+	if (serialId.get() != "")
+	{
+		setup(serialId.get());
+	}
 	
 }

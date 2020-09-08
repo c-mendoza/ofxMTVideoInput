@@ -11,6 +11,8 @@
 #include <3d/ofEasyCam.h>
 #include "MTVideoInputSourceRealSense.hpp"
 
+class SpatialCam;
+
 class SpatialCamWorld : public MTVideoInputSource,
 						public ofThread
 {

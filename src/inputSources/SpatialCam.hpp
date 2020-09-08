@@ -16,7 +16,7 @@ public:
 
 	ofParameter<glm::vec3> position;
 	ofParameter<glm::vec3> rotation;
-	ofReadOnlyParameter<SpatialCamp, std::string> serialId;
+	ofReadOnlyParameter<std::string, SpatialCam> serialId;
 
 	void getDepthFrame();
 	bool setup(std::string serialId);
