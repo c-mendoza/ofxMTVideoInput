@@ -135,6 +135,11 @@ cv::Mat MTVideoInputSourceRealSense::getCVPixels()
 	return cv::Mat();
 }
 
+const rs2::points& MTVideoInputSourceRealSense::getPoints()
+{
+	return points;
+}
+
 void MTVideoInputSourceRealSense::threadedFunction()
 {
 	while (isThreadRunning())
@@ -174,11 +179,14 @@ void MTVideoInputSourceRealSense::threadedFunction()
 
 				filtered = colorizer.colorize(filtered);
 
-				if (outputMode == Output3D) {
+				if (outputMode == Output3D)
+				{
 					pointcloud.map_to(filtered);
 					auto points = pointcloud.calculate(filtered);
 					outputQueue.enqueue(points);
-				} else {
+				}
+				else
+				{
 					outputQueue.enqueue(filtered);
 				}
 
@@ -232,8 +240,8 @@ void MTVideoInputSourceRealSense::update()
 			toOf(vf, pixels);
 		}
 		else
-			{
-			auto points = frame.as<rs2::points>();
+		{
+			points = frame.as<rs2::points>();
 			// do something here;
 		}
 		isFrameAvailable = true;

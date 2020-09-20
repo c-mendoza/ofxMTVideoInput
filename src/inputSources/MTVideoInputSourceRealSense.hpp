@@ -86,6 +86,8 @@ public:
 
 	bool getDeviceWithSerial(std::string serial, rs2::device& device);
 
+	const rs2::points& getPoints();
+
 private:
 	rs2::colorizer colorizer;
 	rs2::frame_queue outputQueue;
@@ -104,6 +106,7 @@ private:
 	std::vector<rs2::filter> filters;
 	bool isFrameAvailable = false;
 	ofPixels pixels;
+	rs2::points points;
 	void setFilterOptions();
 
 	ofMesh mesh;
