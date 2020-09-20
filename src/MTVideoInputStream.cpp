@@ -180,13 +180,14 @@ void MTVideoInputStream::threadedFunction()
 				streamCompleteFastEvent.notify(this, eventArgs);
 				streamCompleteEvent.notify(this, eventArgs);
 			}
+			unlock();
 		}
 		else
 		{
+			unlock();
 			yield();
-//            ofLogVerbose() << "No frame";
 		}
-		unlock();
+
 	}
 
 	ofLogVerbose("MTVideoInput") << "Thread complete";

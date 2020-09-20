@@ -135,6 +135,11 @@ cv::Mat MTVideoInputSourceRealSense::getCVPixels()
 	return cv::Mat();
 }
 
+const rs2::points& MTVideoInputSourceRealSense::getPoints()
+{
+	return points;
+}
+
 void MTVideoInputSourceRealSense::threadedFunction()
 {
 	while (isThreadRunning())
@@ -173,16 +178,19 @@ void MTVideoInputSourceRealSense::threadedFunction()
 				}
 
 				filtered = colorizer.colorize(filtered);
-				outputQueue.enqueue(filtered);
-			}
 
-			// Push filtered & original data to their respective queues
-			// Note, pushing to two different queues might cause the application to display
-			//  original and filtered pointclouds from different depth frames
-			//  To make sure they are synchronized you need to push them together or add some
-			//  synchronization mechanisms
-//			filtered_data.enqueue(filtered);
-//			original_data.enqueue(depth_frame);
+				if (outputMode == Output3D)
+				{
+					pointcloud.map_to(filtered);
+					auto points = pointcloud.calculate(filtered);
+					outputQueue.enqueue(points);
+				}
+				else
+				{
+					outputQueue.enqueue(filtered);
+				}
+
+			}
 		}
 
 //			yield();
@@ -226,8 +234,16 @@ void MTVideoInputSourceRealSense::update()
 	rs2::frame frame;
 	if (outputQueue.poll_for_frame(&frame))
 	{
-		auto vf = frame.as<rs2::video_frame>();
-		toOf(vf, pixels);
+		if (outputMode == Output2D)
+		{
+			auto vf = frame.as<rs2::video_frame>();
+			toOf(vf, pixels);
+		}
+		else
+		{
+			points = frame.as<rs2::points>();
+			// do something here;
+		}
 		isFrameAvailable = true;
 	}
 }

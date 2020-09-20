@@ -28,6 +28,11 @@ class MTVideoInputSourceRealSense : public MTVideoInputSource,
 									public ofThread
 {
 public:
+	enum OutputMode {
+		Output2D,
+		Output3D
+	};
+
 	MTVideoInputSourceRealSense(std::string deviceID);
 	~MTVideoInputSourceRealSense();
 	bool isFrameNew() override;
@@ -41,8 +46,11 @@ public:
 	void threadedFunction() override;
 	void serialize(ofXml& serializer) override;
 	void deserialize(ofXml& serializer) override;
+
+	const ofMesh& getMesh();
 	ofParameter<bool> enableDepth;
 	ofParameter<bool> enableColor;
+	ofParameter<int> outputMode;
 
 	ofParameter<bool> useDisparity;
 
@@ -78,9 +86,10 @@ public:
 
 	bool getDeviceWithSerial(std::string serial, rs2::device& device);
 
+	const rs2::points& getPoints();
+
 private:
 	rs2::colorizer colorizer;
-//	 rs2::pipeline pipeline;
 	rs2::frame_queue outputQueue;
 	rs2::frame_queue postProcessingQueue;
 	rs2::pointcloud pointcloud;
@@ -97,7 +106,10 @@ private:
 	std::vector<rs2::filter> filters;
 	bool isFrameAvailable = false;
 	ofPixels pixels;
+	rs2::points points;
 	void setFilterOptions();
+
+	ofMesh mesh;
 
 	template<typename T = unsigned char>
 	void toOf(rs2::video_frame& frame, ofPixels_<T>& pix)
