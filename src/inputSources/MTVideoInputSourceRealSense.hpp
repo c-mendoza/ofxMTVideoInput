@@ -29,8 +29,9 @@ class MTVideoInputSourceRealSense : public MTVideoInputSource,
 {
 public:
 	enum OutputMode {
-		Output2D,
-		Output3D
+		Output2D,		// Output in ofPixels
+		Output3D,		// Output in rs2::points
+		OutputRS2		// Output in rs2::frame
 	};
 
 	MTVideoInputSourceRealSense(std::string deviceID);
@@ -76,6 +77,7 @@ public:
 	ofParameter<int> tempFilterDelta;
 
 	ofParameterGroup colorizerGroup;
+	ofParameter<bool> useColorizer;
 
 	static rs2::context& getRS2Context()
 	{
@@ -83,9 +85,13 @@ public:
 		return context;
 	}
 
-	bool getDeviceWithSerial(std::string serial, rs2::device& device);
+	bool getDeviceWithSerial(const std::string& serial, rs2::device& device);
 
 	const rs2::points& getPoints();
+	rs2::frame getRS2Frame();
+	static std::vector<std::shared_ptr<rs2::device>> GetDevices();
+	std::vector<rs2::video_stream_profile> getStreamProfiles();
+	const rs2::depth_sensor getDepthSensor() { return sensor.as<rs2::depth_sensor>(); }
 
 private:
 	rs2::colorizer colorizer;
@@ -100,12 +106,13 @@ private:
 	rs2::spatial_filter spat_filter;    // Spatial    - edge-preserving spatial smoothing
 	rs2::temporal_filter temp_filter;   // Temporal   - reduces temporal noise
 	rs2::disparity_transform depth_to_disparity;
-	rs2::disparity_transform disparity_to_depth;
+	rs2::disparity_transform disparity_to_depth = rs2::disparity_transform(false);
 
 	std::vector<rs2::filter> filters;
 	bool isFrameAvailable = false;
 	ofPixels pixels;
 	rs2::points points;
+	rs2::frame rs2Frame;
 	void setFilterOptions();
 
 	ofMesh mesh;
@@ -120,12 +127,15 @@ private:
 	void getSupportedResolutions(rs2::sensor& sensor);
 	rs2::video_stream_profile getBestProfile(int width, int height, int fps);
 	std::vector<rs2::video_stream_profile> streamProfiles;
-	void createParameterFromOption(rs2::options endpoint, rs2_option option, ofParameterGroup& parameters);
-	void setRS2Option(rs2::options endpoint, rs2_option option, float val);
+	void createParameterFromOption(const rs2::options& endpoint, rs2_option option, ofParameterGroup& parameters);
+	static void SetRS2Option(const rs2::options& endpoint, rs2_option option, float val);
 
 	ofThreadChannel<std::pair<rs2_option, float>> optionsChannel;
 
-	static std::vector<std::shared_ptr<rs2::device>> devices;
+	static std::vector<std::shared_ptr<rs2::device>> Devices;
+
+
+	rs2::frame colorizedFrame;
 };
 
 
