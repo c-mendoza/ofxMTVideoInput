@@ -14,13 +14,13 @@ void MTOpticalFlowVideoProcess::notifyEvents()
 {
 	MTVideoProcess::notifyEvents();
 	auto processEventArgs =
-            MTVideoProcessCompleteFastEventArgs<MTOpticalFlowVideoProcess>
-                    (processOutput, this);
+			MTVideoProcessCompleteFastEventArgs<MTOpticalFlowVideoProcess>
+					(processOutput, this);
 	ofNotifyEvent(opticalFlowProcessCompleteFastEvent, processEventArgs, this);
 }
 
 MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess() :
-        MTVideoProcess("Optical Flow", "MTOpticalFlowVideoProcess")
+		MTVideoProcess("Optical Flow", "MTOpticalFlowVideoProcess")
 {
 	parameters.add(usefb.set("Use Farneback", true));
 	parameters.add(fbPyrScale.set("fbPyrScale", .5, 0, .99));
@@ -30,14 +30,15 @@ MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess() :
 	parameters.add(fbPolySigma.set("fbPolySigma", 1.5, 1.1, 2));
 	parameters.add(fbUseGaussian.set("fbUseGaussian", false));
 	parameters.add(fbWinSize.set("winSize", 32, 4, 64));
-	parameters.add(useThreshold.set("Use Threshold Filter",false));
+	parameters.add(useThreshold.set("Use Threshold Filter", false));
 	parameters.add(threshold.set("Threshold", 0, 0, 5000));
 }
 
 void MTOpticalFlowVideoProcess::process(MTProcessData& processData)
 {
 
-	if(usefb) {
+	if (usefb)
+	{
 		curFlow = &fb;
 		fb.setPyramidScale(fbPyrScale);
 		fb.setNumLevels(fbLevels);
@@ -47,13 +48,28 @@ void MTOpticalFlowVideoProcess::process(MTProcessData& processData)
 		fb.setPolySigma(fbPolySigma);
 		fb.setUseGaussian(fbUseGaussian);
 //		fb.getFlow();
-	} else {
+	}
+	else
+	{
 		curFlow = &lk;
 		lk.setMaxFeatures(lkMaxFeatures);
 		lk.setQualityLevel(lkQualityLevel);
 		lk.setMinDistance(lkMinDistance);
 		lk.setWindowSize(lkWinSize);
 		lk.setMaxLevel(lkMaxLevel);
+	}
+
+	// Check to see if the image size has changed. If so, reset the flow:
+	if (fb.getWidth() != processData.processStream.cols ||
+		fb.getHeight() != processData.processStream.rows)
+	{
+		// Check for the special case of the first capture frame:
+		// If getWidth is 0 then we are starting up capture, so we should
+		// not reset the flow
+		if (fb.getWidth() != 0)
+		{
+			fb.resetFlow();
+		}
 	}
 
 	curFlow->calcOpticalFlow(processData.processStream);
