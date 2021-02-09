@@ -13,7 +13,6 @@ public:
 	MTVideoInputSourceOFGrabber(std::string devID);
 	bool isFrameNew() override;
 	ofPixels& getPixels() override;
-	cv::Mat getCVPixels() override;
 	void start() override;
 	void close() override;
 	void update() override;

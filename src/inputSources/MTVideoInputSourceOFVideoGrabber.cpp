@@ -4,7 +4,6 @@
 
 #include <ofxMTVideoInput.h>
 #include "MTVideoInputSourceOFVideoGrabber.hpp"
-#include "ofxCv/Utilities.h"
 
 
 MTVideoInputSourceOFGrabber::MTVideoInputSourceOFGrabber(std::string devID) :
@@ -18,11 +17,6 @@ bool MTVideoInputSourceOFGrabber::isFrameNew()
 ofPixels& MTVideoInputSourceOFGrabber::getPixels()
 {
 	return grabber.getPixels();
-}
-
-cv::Mat MTVideoInputSourceOFGrabber::getCVPixels()
-{
-	return ofxCv::toCv(grabber.getPixels());
 }
 
 void MTVideoInputSourceOFGrabber::start()

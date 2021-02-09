@@ -33,7 +33,6 @@ public:
 
 	 virtual bool isFrameNew() = 0;
 	 virtual const ofPixels& getPixels() = 0;
-	 virtual cv::Mat getCVPixels() = 0;
 	 virtual void start() = 0;
 
 	 virtual void close()
@@ -42,6 +41,7 @@ public:
 	 virtual void update() = 0;
 	 virtual void setup() = 0;
 	 virtual void setup(int width, int height, int framerate, std::string deviceID = "") = 0;
+	 virtual void renderImGui(ofxImGui::Settings& settings);
 	 ofParameter<glm::ivec2> captureSize;
 	 ofParameter<int> frameRate;
 	 ofParameter<std::string> deviceID;
@@ -76,45 +76,6 @@ private:
 	 std::atomic_bool running;
 };
 
-class MTVideoInputSourceUI : public std::enable_shared_from_this<MTVideoInputSourceUI>,
-														 public MTEventListenerStore
-{
-public:
-	 MTVideoInputSourceUI(std::shared_ptr<MTVideoInputSource> inputSource);
-
-	 virtual ~MTVideoInputSourceUI()
-	 {}
-
-	 virtual void draw()
-	 {}
-
-	 virtual void draw(ofxImGui::Settings& settings);
-
-protected:
-	 std::weak_ptr<MTVideoInputSource> inputSource;
-};
-
-class MTVideoInputSourceUIWithImage : public MTVideoInputSourceUI
-{
-public:
-	 MTVideoInputSourceUIWithImage(std::shared_ptr<MTVideoInputSource> inputSource, ofImageType imageType);
-	 ~MTVideoInputSourceUIWithImage();
-
-/**
- * @brief Draws the video process output as an image via
- * ofxImGui::AddImage.
- * @param settings
- */
-	 void draw(ofxImGui::Settings& settings) override;
-	 int outputImageWidth = 320;
-	 int outputImageHeight = 240;
-
-	 ofTexture outputImage;
-
-protected:
-
-	 ofThreadChannel<ofPixels> outputChannel;
-};
 
 //class MTCaptureEventArgs : public ofEventArgs
 //{

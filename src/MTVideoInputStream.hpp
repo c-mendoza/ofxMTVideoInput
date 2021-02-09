@@ -60,8 +60,6 @@ public:
 
 // These are read only because they are not thread-safe. Use the setters
 // declared
-//	 ofReadOnlyParameter<int, MTVideoInputStream> processingWidth;
-//	 ofReadOnlyParameter<int, MTVideoInputStream> processingHeight;
 	 ofReadOnlyParameter<ofPath, MTVideoInputStream> outputRegion;
 	 ofReadOnlyParameter<ofPath, MTVideoInputStream> inputROI;
 	 ofParameter<float> processingSize;
@@ -233,7 +231,9 @@ protected:
 
 	 void enqueueFunction(std::function<void()> funct)
 	 {
+	 		lock();
 			functionQueue.push(funct);
+			unlock();
 	 }
 
 	 void syncParameters();
