@@ -110,7 +110,7 @@ MTBackgroundSubstraction2UI(const std::shared_ptr<MTVideoProcess>& videoProcess,
 void MTBackgroundSubstraction2UI::draw(ofxImGui::Settings& settings)
 {
 	auto vp = std::dynamic_pointer_cast<MTBackgroundSubstraction2>(videoProcess.lock());
-	MTVideoProcessUIWithImage::draw(settings);
+	drawImage();
 	ofxImGui::AddParameter<bool>(vp->isActive);
 	ofxImGui::AddParameter<float>(vp->threshold);
 	ofxImGui::AddParameter<int>(vp->history);

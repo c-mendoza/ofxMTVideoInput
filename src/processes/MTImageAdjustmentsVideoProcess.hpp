@@ -48,7 +48,7 @@ class MTImageAdjustmentsVideoProcessUI : public MTVideoProcessUIWithImage
 public:
 	MTImageAdjustmentsVideoProcessUI(const std::shared_ptr <MTVideoProcess>& videoProcess,
 										   ofImageType imageType);
-	void draw(ofxImGui::Settings& settings) override;
+//	void draw(ofxImGui::Settings& settings) override;
 
 };
 

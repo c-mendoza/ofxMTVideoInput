@@ -34,49 +34,7 @@ void MTVideoInputSource::deserialize(ofXml& serializer)
 	 isDeserializing = false;
 }
 
-MTVideoInputSourceUI::MTVideoInputSourceUI(std::shared_ptr<MTVideoInputSource> inputSource)
+void MTVideoInputSource::renderImGui(ofxImGui::Settings& settings)
 {
-	this->inputSource = inputSource;
+	ofxImGui::AddGroup(getParameters(), settings);
 }
-
-void MTVideoInputSourceUI::draw(ofxImGui::Settings& settings)
-{
-	ofxImGui::AddGroup(inputSource.lock()->getParameters(), settings);
-}
-
-MTVideoInputSourceUIWithImage::
-MTVideoInputSourceUIWithImage(std::shared_ptr<MTVideoInputSource> inputSource,
-						  ofImageType imageType) : MTVideoInputSourceUI(inputSource)
-{
-	addEventListener(inputSource->frameCapturedEvent.newListener([this](
-			const std::shared_ptr<MTVideoInputSource>& source)
-																		{
-																			ofPixels pixels = source->getPixels();
-																			outputChannel.send(std::move(pixels));
-																		}));
-}
-
-MTVideoInputSourceUIWithImage::~MTVideoInputSourceUIWithImage()
-{
-	outputChannel.close();
-}
-
-void MTVideoInputSourceUIWithImage::draw(ofxImGui::Settings& settings)
-{
-	ofPixels pixels;
-	while (outputChannel.tryReceive(pixels))
-	{
-		if (!outputImage.isAllocated() ||
-		pixels.getWidth() != outputImage.getWidth() ||
-		pixels.getHeight() != outputImage.getWidth())
-		{
-			outputImage.allocate(pixels, false); //ImGui needs GL_TEXTURE_2D
-		}
-		else
-		{
-			outputImage.loadData(pixels);
-		}
-	}
-	ofxImGui::AddImage(outputImage, glm::vec2(outputImageWidth, outputImageHeight));
-}
-

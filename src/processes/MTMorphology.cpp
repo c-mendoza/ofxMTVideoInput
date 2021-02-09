@@ -65,7 +65,7 @@ void MTMorphologyVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
 	auto vp = videoProcess.lock();
 	auto mp = std::dynamic_pointer_cast<MTMorphologyVideoProcess>(vp);
-	MTVideoProcessUIWithImage::draw(settings);
+	drawImage();
 	ofxImGui::AddParameter<bool>(mp->isActive);
 	ofxImGui::AddRadio(mp->mode, modeLabels);
 	ofxImGui::AddParameter<int>(mp->size);

@@ -15,7 +15,10 @@ MTVideoProcessUI::MTVideoProcessUI(std::shared_ptr<MTVideoProcess> videoProcess)
 
 void MTVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
-	ofxImGui::AddGroup(videoProcess.lock()->getParameters(), settings);
+	for (auto& param : videoProcess.lock()->getParameters()) {
+		ofxImGui::AddParameter(param);
+	}
+//	ofxImGui::AddGroup(videoProcess.lock()->getParameters(), settings);
 }
 
 MTVideoProcessUIWithImage::
@@ -39,10 +42,18 @@ MTVideoProcessUIWithImage::~MTVideoProcessUIWithImage()
 
 void MTVideoProcessUIWithImage::draw(ofxImGui::Settings& settings)
 {
+	drawImage();
+	MTVideoProcessUI::draw(settings);
+}
+
+void MTVideoProcessUIWithImage::drawImage()
+{
 	ofPixels pixels;
 	while (outputChannel.tryReceive(pixels))
 	{
-		if (!outputImage.isAllocated())
+		if (!outputImage.isAllocated() ||
+			outputImage.getWidth() != pixels.getWidth() ||
+			outputImage.getHeight() != pixels.getHeight())
 		{
 			outputImage.allocate(pixels, false); //ImGui needs GL_TEXTURE_2D
 		}
@@ -51,5 +62,10 @@ void MTVideoProcessUIWithImage::draw(ofxImGui::Settings& settings)
 			outputImage.loadData(pixels);
 		}
 	}
-	ofxImGui::AddImage(outputImage, glm::vec2(outputImageWidth, outputImageHeight));
+	if (outputImage.isAllocated())
+	{
+		auto w = ImGui::GetContentRegionAvailWidth();
+		auto ratio = w / outputImage.getWidth();
+		ofxImGui::AddImage(outputImage, glm::vec2(outputImage.getWidth() * ratio, outputImage.getHeight() * ratio));
+	}
 }

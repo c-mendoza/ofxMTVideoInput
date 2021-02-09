@@ -41,6 +41,7 @@ public:
 	 * @param settings
 	 */
 	void draw(ofxImGui::Settings& settings) override;
+	void drawImage();
 	int outputImageWidth = 320;
 	int outputImageHeight = 240;
 
