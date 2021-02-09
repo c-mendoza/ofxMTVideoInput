@@ -23,9 +23,5 @@ private:
 	ofVideoGrabber grabber;
 };
 
-class MTVideoInputSourceOFGrabberUI : public MTVideoInputSourceUIWithImage
-{
-
-};
 
 #endif //NERVOUSSTRUCTUREOF_MTVIDEOINPUTSOURCEOFVIDEOGRABBER_HPP
