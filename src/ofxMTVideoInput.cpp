@@ -60,7 +60,7 @@ void MTVideoInput::init()
 		}
 		return sources;
 	});
-	updateInputSources();
+	updateInputSources(); // Probably don't need this
 	isInit = true;
 }
 
@@ -99,6 +99,7 @@ void MTVideoInput::removeStream(int index)
 
 void MTVideoInput::removeStream(std::shared_ptr<MTVideoInputStream> stream)
 {
+	stream->stopStream();
 	auto dex = ofFind(inputStreams, stream);
 	removeStream(dex);
 
@@ -140,6 +141,12 @@ typename std::vector<std::shared_ptr<MTVideoInputStream>>::const_reverse_iterato
 
 void MTVideoInput::serialize(ofXml& serializer)
 {
+	// Find and remove the old parameters, if any:
+	auto oldParams = serializer.findFirst(this->getParameters().getEscapedName());
+	if (oldParams.getName() == this->getParameters().getEscapedName()) {
+		serializer.removeChild(oldParams);
+	}
+
 	syncParameters();
 	MTModel::serialize(serializer);
 }
