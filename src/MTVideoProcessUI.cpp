@@ -15,7 +15,8 @@ MTVideoProcessUI::MTVideoProcessUI(std::shared_ptr<MTVideoProcess> videoProcess)
 
 void MTVideoProcessUI::draw(ofxImGui::Settings& settings)
 {
-	for (auto& param : videoProcess.lock()->getParameters()) {
+	for (auto& param : videoProcess.lock()->getParameters())
+	{
 		ofxImGui::AddParameter(param);
 	}
 //	ofxImGui::AddGroup(videoProcess.lock()->getParameters(), settings);
@@ -29,9 +30,7 @@ MTVideoProcessUIWithImage(std::shared_ptr<MTVideoProcess> videoProcess,
 	addEventListener(videoProcess->processCompleteFastEvent.newListener([this](
 			const MTVideoProcessCompleteFastEventArgs<MTVideoProcess>& args)
 																		{
-																			ofPixels pixels;
-																			ofxCv::toOf(args.processOutput, pixels);
-																			outputChannel.send(std::move(pixels));
+																			outputChannel.send(args.processOutput);
 																		}));
 }
 
@@ -48,19 +47,25 @@ void MTVideoProcessUIWithImage::draw(ofxImGui::Settings& settings)
 
 void MTVideoProcessUIWithImage::drawImage()
 {
-	ofPixels pixels;
-	while (outputChannel.tryReceive(pixels))
+	ofAbstractHasPixels pixels;
+	cv::Mat cvImage;
+	while (outputChannel.tryReceive(cvImage))
 	{
-		if (!outputImage.isAllocated() ||
-			outputImage.getWidth() != pixels.getWidth() ||
-			outputImage.getHeight() != pixels.getHeight())
+		auto depth = cvImage.depth();
+		if (depth == CV_16U)
 		{
-			outputImage.allocate(pixels, false); //ImGui needs GL_TEXTURE_2D
+			loadTextureData<unsigned short>(cvImage);
+		}
+		else if (depth == CV_32F ||
+				 depth == CV_64F || depth == CV_16F)
+		{
+			loadTextureData<float>(cvImage);
 		}
 		else
 		{
-			outputImage.loadData(pixels);
+			loadTextureData<unsigned char>(cvImage);
 		}
+
 	}
 	if (outputImage.isAllocated())
 	{

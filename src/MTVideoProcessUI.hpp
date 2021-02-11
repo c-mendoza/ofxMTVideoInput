@@ -8,6 +8,7 @@
 #include <utils/ofThreadChannel.h>
 #include "ofxImGui.h"
 #include "MTAppFrameworkUtils.hpp"
+#include "ofxCv.h"
 
 class MTVideoProcess;
 
@@ -17,11 +18,16 @@ class MTVideoProcessUI : public std::enable_shared_from_this<MTVideoProcessUI>,
 public:
 	MTVideoProcessUI(std::shared_ptr<MTVideoProcess> videoProcess);
 
-	virtual ~MTVideoProcessUI(){}
+	virtual ~MTVideoProcessUI()
+	{}
 
-	virtual void draw(){}
+	virtual void draw()
+	{}
+
 	virtual void draw(ofxImGui::Settings& settings);
-	std::string getName() { return name; };
+
+	std::string getName()
+	{ return name; };
 
 protected:
 	std::weak_ptr<MTVideoProcess> videoProcess;
@@ -49,7 +55,27 @@ public:
 
 protected:
 
-	ofThreadChannel<ofPixels> outputChannel;
+	ofThreadChannel<cv::Mat> outputChannel;
+
+private:
+
+	template<class T>
+	void loadTextureData(cv::Mat cvImage)
+	{
+		ofPixels_<T> pixels;
+		ofxCv::toOf(cvImage, pixels);
+
+		if (!outputImage.isAllocated() ||
+			outputImage.getWidth() != cvImage.cols ||
+			outputImage.getHeight() != cvImage.rows)
+		{
+			outputImage.allocate(pixels, false); //ImGui needs GL_TEXTURE_2D
+		}
+		else
+		{
+			outputImage.loadData(pixels);
+		}
+	}
 };
 
 #endif //NERVOUSSTRUCTUREOF_MTVIDEOPROCESSVIEW_HPP
