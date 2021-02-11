@@ -61,6 +61,8 @@ public:
 
 	const cv::Vec2f& getFlowPosition(int x, int y);
 
+	std::shared_ptr<MTVideoProcessUI> createUI() override;
+
 private:
 	ofxCv::FlowFarneback fb;
 	ofxCv::FlowPyrLK lk;

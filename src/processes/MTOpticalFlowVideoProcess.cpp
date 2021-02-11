@@ -7,6 +7,7 @@
 //
 
 #include <MTVideoInputStream.hpp>
+#include <MTVideoProcessUI.hpp>
 #include "processes/MTOpticalFlowVideoProcess.hpp"
 
 
@@ -105,3 +106,7 @@ const cv::Vec2f& MTOpticalFlowVideoProcess::getFlowPosition(int x, int y)
 	return fb.getFlow().at<cv::Vec2f>(y, x);
 }
 
+std::shared_ptr<MTVideoProcessUI> MTOpticalFlowVideoProcess::createUI()
+{
+	return std::make_shared<MTVideoProcessUIWithImage>(shared_from_this(), OF_IMAGE_COLOR);
+}
