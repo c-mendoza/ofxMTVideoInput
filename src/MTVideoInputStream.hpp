@@ -143,6 +143,7 @@ private:
 	  */
 	 void setProcessingSize(float size);
 	 float prevProcessingSize = 1.0f;
+	 bool isDeserializing = false;
 
 public:
 	 void setInputSource(MTVideoInputSourceInfo sourceInf);

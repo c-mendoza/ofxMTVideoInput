@@ -52,10 +52,13 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 
 	addEventListener(processingSize.newListener([this](float val)
 												{
-													enqueueFunction([this, val]()
-																	{
-																		setProcessingSize(val);
-																	});
+													if (!isDeserializing)
+													{
+														enqueueFunction([this, val]()
+																		{
+																			setProcessingSize(val);
+																		});
+													}
 												}));
 
 //	addEventListener(outputRegion.newListener([this](ofPath& val) {
@@ -73,11 +76,13 @@ void MTVideoInputStream::setProcessingSize(float val)
 	processingSize.setWithoutEventNotifications(val);
 	float change = val / prevProcessingSize;
 	prevProcessingSize = val;
+	if (!isDeserializing)
+	{
 // Transform the inputROI:
-	auto newPath = ofPath(inputROI.get());
-	newPath.scale(change, change);
-	inputROI.set(newPath);
-
+		auto newPath = ofPath(inputROI.get());
+		newPath.scale(change, change);
+		inputROI.set(newPath);
+	}
 	processingWidth = floor((float) inputWidth * processingSize);
 	processingHeight = floor((float) inputHeight * processingSize);
 	workingImage.create(processingHeight, processingWidth, CV_8UC1);
@@ -471,6 +476,7 @@ void MTVideoInputStream::removeAllVideoProcesses()
 void MTVideoInputStream::deserialize(ofXml& serializer)
 {
 	bool wasRunning = false;
+	isDeserializing = true;
 	if (isThreadRunning())
 	{
 		wasRunning = true;
@@ -487,6 +493,7 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 
 	auto chainParent = thisChainXml.getParent();
 	MTModel::deserialize(chainParent);
+	setProcessingSize(this->processingSize);
 
 	auto processParamsXml = serializer.findFirst("//" + getName() + "/" + "Video_Processes");
 
@@ -548,6 +555,8 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 	}
 
 	updateTransformInternals();
+
+	isDeserializing = false;
 
 	if (wasRunning)
 	{
