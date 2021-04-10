@@ -18,13 +18,13 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 {
 
 	parameters.add(isRunning.set("Running", false),
-						mirrorVideo.set("Mirror Video", true),
+				   mirrorVideo.set("Mirror Video", true),
 //									processingWidth.set("Process Width", 320, 120, 1920),
 //									processingHeight.set("Process Height", 240, 80, 1080),
-						processingSize.set("Processing Size", 1.0, 0.1, 1.0),
-						useROI.set("Use ROI", false),
-						outputRegion.set("Output Region", ofPath()),
-						inputROI.set("Input ROI", ofPath()));
+				   processingSize.set("Processing Size", 1.0, 0.1, 1.0),
+				   useROI.set("Use ROI", false),
+				   outputRegion.set("Output Region", ofPath()),
+				   inputROI.set("Input ROI", ofPath()));
 	processesParameters.setName("Video Processes");
 	inputSourcesParameters.setName("Input Sources");
 	parameters.add(processesParameters, inputSourcesParameters);
@@ -43,18 +43,20 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 	updateTransformInternals();
 
 	addEventListener(useROI.newListener([this](bool& val)
-													{
-                                                        enqueueFunction([this]() {
-                                                            updateTransformInternals();
-                                                        });
-													}));
+										{
+											enqueueFunction([this]()
+															{
+																updateTransformInternals();
+															});
+										}));
 
 	addEventListener(processingSize.newListener([this](float val)
-															  {
-                                                                  enqueueFunction([this, val]() {
-                                                                      setProcessingSize(val);
-                                                                  });
-															  }));
+												{
+													enqueueFunction([this, val]()
+																	{
+																		setProcessingSize(val);
+																	});
+												}));
 
 //	addEventListener(outputRegion.newListener([this](ofPath& val) {
 //		updateTransformInternals();
@@ -150,9 +152,9 @@ void MTVideoInputStream::threadedFunction()
 			{
 				cv::Mat result;
 				cv::warpPerspective(workingImage,
-										  result,
-										  roiToProcessTransform,
-										  processSize);
+									result,
+									roiToProcessTransform,
+									processSize);
 				workingImage = result;
 			}
 
@@ -271,7 +273,8 @@ cv::Mat MTVideoInputStream::getOutputToProcessTransform()
 void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo)
 {
 	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
-	while (!tryLock()){}
+	while (!tryLock())
+	{}
 
 	if (inputSource != nullptr) inputSource->close();
 	inputSource = MTVideoInput::Instance().createInputSource(sourceInfo);
@@ -292,7 +295,8 @@ void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo)
 void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml& serializer)
 {
 	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
-	while (!tryLock()){}
+	while (!tryLock())
+	{}
 
 	if (inputSource != nullptr) inputSource->close();
 	inputSource = MTVideoInput::Instance().createInputSource(sourceInfo);
@@ -305,7 +309,7 @@ void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml
 		if (inputSource->deviceID->compare(foundDevID) != 0)
 		{
 			ofLogWarning("MTVideoInputStream") << "Did not find deviceID " << inputSource->deviceID
-														  << ". Assigning found deviceID " << foundDevID << " instead.";
+											   << ". Assigning found deviceID " << foundDevID << " instead.";
 			inputSource->deviceID.setWithoutEventNotifications(foundDevID);
 		}
 		inputSourcesParameters.add(inputSource->getParameters());
@@ -351,18 +355,20 @@ void MTVideoInputStream::addVideoProcess(std::shared_ptr<MTVideoProcess> process
 void MTVideoInputStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> process, unsigned long index)
 {
 	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
-	while (!tryLock()){}
+	while (!tryLock())
+	{}
 
 	process->setProcessSize(processingWidth, processingHeight);
 	process->setup();
-	int count = std::count_if(videoProcesses.begin(), videoProcesses.end(), [&process](std::shared_ptr<MTVideoProcess> p)
-	{
-		if (p->getName().find(process->getName()) != string::npos)
-		{
-			return true;
-		}
-		return false;
-	});
+	int count = std::count_if(videoProcesses.begin(), videoProcesses.end(),
+							  [&process](std::shared_ptr<MTVideoProcess> p)
+							  {
+								  if (p->getName().find(process->getName()) != string::npos)
+								  {
+									  return true;
+								  }
+								  return false;
+							  });
 
 	if (count > 0)
 	{
@@ -388,7 +394,8 @@ void MTVideoInputStream::swapProcesses(size_t index1, size_t index2)
 		return;
 	}
 	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
-	while (!tryLock()){}
+	while (!tryLock())
+	{}
 
 	videoProcesses.at(index1)->setup();
 	videoProcesses.at(index2)->setup();
@@ -427,7 +434,8 @@ int MTVideoInputStream::getVideoProcessCount()
 bool MTVideoInputStream::removeVideoProcess(std::shared_ptr<MTVideoProcess> process)
 {
 	// So "lock()" in Linux just deadlocks if the lock is being used elsewhere... So we are doing this stupid thing:
-	while (!tryLock()){}
+	while (!tryLock())
+	{}
 
 	auto iter = std::find(videoProcesses.begin(), videoProcesses.end(), process);
 	if (iter != videoProcesses.end())
@@ -450,7 +458,8 @@ bool MTVideoInputStream::removeVideoProcessAtIndex(int index)
 
 void MTVideoInputStream::removeAllVideoProcesses()
 {
-	while (!tryLock()){}
+	while (!tryLock())
+	{}
 	videoProcesses.clear();
 	unlock();
 }
@@ -495,7 +504,7 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		if (auto typenameXml = processXml.getChild("Process_Type_Name"))
 		{
 			std::shared_ptr<MTVideoProcess> process = MTVideoInput::Instance().createVideoProcess(
-				typenameXml.getValue());
+					typenameXml.getValue());
 			if (process != nullptr)
 			{
 				addVideoProcess(process);
@@ -560,11 +569,11 @@ void MTVideoInputStream::updateTransformInternals()
 	if (this->useROI)
 	{
 		// Basic error checking:
-		for (auto command : inputROI.get().getCommands())
-		{
-			command.to.x = ofClamp(command.to.x, 0, processingWidth);
-			command.to.y = ofClamp(command.to.y, 0, processingHeight);
-		}
+//		for (auto command : inputROI.get().getCommands())
+//		{
+//			command.to.x = ofClamp(command.to.x, 0, processingWidth);
+//			command.to.y = ofClamp(command.to.y, 0, processingHeight);
+//		}
 
 		auto roiPoly = inputROI.get().getOutline()[0];
 

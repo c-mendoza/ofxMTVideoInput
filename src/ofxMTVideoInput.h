@@ -37,8 +37,8 @@ public:
 
 	void init();
 
-	std::shared_ptr<MTVideoInputStream> createStream();
-	std::shared_ptr<MTVideoInputStream> createStream(std::string name);
+	std::shared_ptr<MTVideoInputStream> createStream(bool start = true);
+	std::shared_ptr<MTVideoInputStream> createStream(std::string name, bool start = true);
 	void removeStream(int index);
 	void removeStream(std::shared_ptr<MTVideoInputStream> stream);
 	void removeAllStreams();
@@ -110,6 +110,7 @@ public:
 
 private:
 	MTVideoInput();
+	~MTVideoInput();
 	std::vector<std::shared_ptr<MTVideoInputStream>> inputStreams;
 	void syncParameters();
 	ofxMTVideoInput::Registry<MTVideoProcess> videoProcessRegistry;

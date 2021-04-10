@@ -56,8 +56,10 @@ void MTBackgroundSubstractionVideoProcess::process(MTProcessData& processData)
 	bSub->apply(processData.processStream, processBuffer);
 	if (substractStream)
 	{
-//		cv::subtract(processBuffer, processData.processStream, processOutput);
-		cv::bitwise_and(processData.processStream, processBuffer, processOutput);
+		processBuffer.convertTo(processBuffer, processData.processStream.type());
+//		cv::multiply()
+//		cv::subtract(processData.processStream, processBuffer, processOutput, processData.processStream.depth());
+		cv::bitwise_and(processData.processStream, processData.processStream, processOutput, processBuffer);
 	}
 	else
 	{

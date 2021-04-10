@@ -52,11 +52,11 @@ public:
 	int outputImageHeight = 240;
 
 	ofTexture outputImage;
+	bool enabled = true;
+	static float ImageScale;
 
 protected:
-
 	ofThreadChannel<cv::Mat> outputChannel;
-
 private:
 
 	template<class T>

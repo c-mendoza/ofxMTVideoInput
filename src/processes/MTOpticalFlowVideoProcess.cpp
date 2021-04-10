@@ -27,10 +27,10 @@ MTOpticalFlowVideoProcess::MTOpticalFlowVideoProcess() :
 	parameters.add(fbPyrScale.set("fbPyrScale", .5, 0, .99));
 	parameters.add(fbLevels.set("fbLevels", 4, 1, 8));
 	parameters.add(fbIterations.set("fbIterations", 2, 1, 8));
-	parameters.add(fbPolyN.set("fbPolyN", 7, 5, 10));
+	parameters.add(fbPolyN.set("fbPolyN", 1.5, 5, 10));
 	parameters.add(fbPolySigma.set("fbPolySigma", 1.5, 1.1, 2));
 	parameters.add(fbUseGaussian.set("fbUseGaussian", false));
-	parameters.add(fbWinSize.set("winSize", 32, 4, 64));
+	parameters.add(fbWinSize.set("winSize", 16, 4, 64));
 	parameters.add(useThreshold.set("Use Threshold Filter", false));
 	parameters.add(threshold.set("Threshold", 0, 0, 5000));
 }

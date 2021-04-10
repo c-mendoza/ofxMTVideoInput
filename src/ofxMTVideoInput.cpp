@@ -21,6 +21,10 @@ MTVideoInput::MTVideoInput() : MTModel("VideoProcessChains")
 
 }
 
+MTVideoInput::~MTVideoInput() {
+	removeAllStreams();
+}
+
 void MTVideoInput::init()
 {
 	if (isInit) return;
@@ -61,15 +65,22 @@ void MTVideoInput::init()
 		return sources;
 	});
 	updateInputSources(); // Probably don't need this
+
+	// Need to stop all streams at the exitEvent instead of the destructor in order to avoid
+	// a crash at app exit time:
+	auto el = ofGetMainLoop()->exitEvent.newListener([this]() {
+		removeAllStreams();
+	});
+	addEventListener(std::move(el));
 	isInit = true;
 }
 
-std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream()
+std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(bool start)
 {
-	return createStream("Stream_" + ofToString(inputStreams.size() + 1));
+	return createStream("Stream_" + ofToString(inputStreams.size() + 1), start);
 }
 
-std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(std::string name)
+std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(std::string name, bool start)
 {
 	auto stream = std::make_shared<MTVideoInputStream>(name);
 	inputStreams.push_back(stream);
@@ -77,7 +88,7 @@ std::shared_ptr<MTVideoInputStream> MTVideoInput::createStream(std::string name)
 	MTVideoInputStreamEventArgs args;
 	args.inputStream = stream;
 	inputStreamAddedEvent.notify(args);
-	stream->startStream();
+	if (start) stream->startStream();
 	return stream;
 }
 
@@ -179,7 +190,7 @@ void MTVideoInput::deserialize(ofXml& serializer)
 		{
 			if (streamXml)
 			{
-				auto chain = createStream(streamXml.getName());
+				auto chain = createStream(streamXml.getName(), false);
 				chain->deserialize(serializer);
 
 				// createStream adds a parameterGroup to the parameters. We need to first remove that
@@ -192,6 +203,11 @@ void MTVideoInput::deserialize(ofXml& serializer)
 				parameters.add(chain->getParameters());
 			}
 		}
+	}
+
+	for (const auto& stream : inputStreams)
+	{
+		stream->startStream();
 	}
 }
 

@@ -226,9 +226,9 @@ protected:
 
 	 bool initializeVideoCapture();
 	 std::shared_ptr<MTVideoInputSource> inputSource;
-
+private:
 	 std::queue<std::function<void()>> functionQueue;
-
+protected:
 	 void enqueueFunction(std::function<void()> funct)
 	 {
 	 		lock();

@@ -7,6 +7,7 @@
 #include "ofThreadChannel.h"
 #include "MTVideoInputStream.hpp"
 
+
 MTVideoProcessUI::MTVideoProcessUI(std::shared_ptr<MTVideoProcess> videoProcess)
 {
 	this->videoProcess = videoProcess;
@@ -21,6 +22,8 @@ void MTVideoProcessUI::draw(ofxImGui::Settings& settings)
 	}
 //	ofxImGui::AddGroup(videoProcess.lock()->getParameters(), settings);
 }
+
+float MTVideoProcessUIWithImage::ImageScale = 1.0f;
 
 MTVideoProcessUIWithImage::
 MTVideoProcessUIWithImage(std::shared_ptr<MTVideoProcess> videoProcess,
@@ -41,8 +44,12 @@ MTVideoProcessUIWithImage::~MTVideoProcessUIWithImage()
 
 void MTVideoProcessUIWithImage::draw(ofxImGui::Settings& settings)
 {
-	drawImage();
-	MTVideoProcessUI::draw(settings);
+	ImGui::Checkbox("Render Image", &enabled);
+	if (enabled)
+	{
+		drawImage();
+		MTVideoProcessUI::draw(settings);
+	}
 }
 
 void MTVideoProcessUIWithImage::drawImage()
@@ -67,10 +74,13 @@ void MTVideoProcessUIWithImage::drawImage()
 		}
 
 	}
+
 	if (outputImage.isAllocated())
 	{
-		auto w = ImGui::GetContentRegionAvailWidth();
-		auto ratio = w / outputImage.getWidth();
-		ofxImGui::AddImage(outputImage, glm::vec2(outputImage.getWidth() * ratio, outputImage.getHeight() * ratio));
+		auto ow = outputImage.getWidth() * ImageScale;
+		auto w = std::min(ow, ImGui::GetContentRegionAvailWidth());
+		auto ratio = w / ow;
+		auto h = outputImage.getHeight() * ImageScale * ratio;
+		ofxImGui::AddImage(outputImage, glm::vec2(w, h));
 	}
 }

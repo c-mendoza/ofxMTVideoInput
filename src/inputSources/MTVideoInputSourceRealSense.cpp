@@ -168,7 +168,6 @@ void MTVideoInputSourceRealSense::threadedFunction()
 				// 5. apply temporal filter
 				// 6. revert the results back (if step Disparity filter was applied
 				// to depth domain (each post processing block is optional and can be applied independantly).
-
 				if (decFilterOn) filtered = dec_filter.process(filtered);
 				if (thrFilterOn) filtered = thr_filter.process(filtered);
 				if (useDisparity) filtered = depth_to_disparity.process(filtered);
