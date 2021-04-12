@@ -64,7 +64,7 @@ void MTVideoProcessUIWithImage::drawImage()
 			loadTextureData<unsigned short>(cvImage);
 		}
 		else if (depth == CV_32F ||
-				 depth == CV_64F || depth == CV_16F)
+				 depth == CV_64F /*|| depth == CV_16F*/)
 		{
 			loadTextureData<float>(cvImage);
 		}
