@@ -16,7 +16,7 @@ MTVideoInputSource::MTVideoInputSource(std::string name, std::string typeName, s
 				  this->friendlyTypeName.set("Friendly Type Name", friendlyTypeName),
 				  deviceID.set("Device ID", _deviceID),
 				  captureSize.set("Capture Size", glm::vec2(320, 240), glm::vec2(40, 30), glm::vec2(1920, 1080)),
-				  frameRate.set("Frame Rate", 30, 5, 120));
+				  frameRate.set("Frame Rate", 30, 0, 120));
 
 
 	addEventListener(deviceID.newListener([this](std::string id)
