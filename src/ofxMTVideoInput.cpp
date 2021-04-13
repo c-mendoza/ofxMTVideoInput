@@ -153,23 +153,23 @@ typename std::vector<std::shared_ptr<MTVideoInputStream>>::const_reverse_iterato
 void MTVideoInput::serialize(ofXml& serializer)
 {
 	// Find and remove the old parameters, if any:
-	auto oldParams = serializer.findFirst(this->getParameters().getEscapedName());
-	if (oldParams.getName() == this->getParameters().getEscapedName()) {
-		serializer.removeChild(oldParams);
-	}
+//	auto oldParams = serializer.findFirst(this->getParameters().getEscapedName());
+//	if (oldParams.getName() == this->getParameters().getEscapedName()) {
+//		serializer.removeChild(oldParams);
+//	}
 
-	syncParameters();
+//	syncParameters();
 	MTModel::serialize(serializer);
 }
 
 void MTVideoInput::syncParameters()
 {
-	parameters.clear();
-	for (auto& stream : inputStreams)
-	{
-		stream->syncParameters();
-		parameters.add(stream->getParameters());
-	}
+//	parameters.clear();
+//	for (auto& stream : inputStreams)
+//	{
+//		stream->syncParameters();
+//		parameters.add(stream->getParameters());
+//	}
 }
 
 std::istream& operator>>(std::istream& is, MTVideoInput& path)

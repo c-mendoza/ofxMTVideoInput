@@ -12,6 +12,7 @@
 #include "MTApp.hpp"
 #include "MTVideoInputSource.hpp"
 #include "MTVideoInputStream.hpp"
+#include "MTAppFrameworkUtils.hpp"
 
 
 MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
@@ -631,7 +632,7 @@ void MTVideoInputStream::updateTransformInternals()
 void MTVideoInputStream::syncParameters()
 {
 	parameters.remove(processesParameters);
-	processesParameters.clear();
+	MTAppFramework::RemoveAllParameters(processesParameters);
 	for (auto p : videoProcesses)
 	{
 		processesParameters.add(p->getParameters());
