@@ -108,6 +108,8 @@ public:
 	ofEvent<MTVideoInputStreamEventArgs> inputStreamAddedEvent;
 	ofEvent<MTVideoInputStreamEventArgs> inputStreamRemovedEvent;
 
+	ofFastEvent<MTResultPublisherEventArgs> resultPublisherFastEvent;
+
 private:
 	MTVideoInput();
 	~MTVideoInput();
