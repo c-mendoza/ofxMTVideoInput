@@ -116,13 +116,12 @@ void MTVideoInputStream::threadedFunction()
 			continue;
 		}
 
-//		std::unique_lock<std::mutex>(mutex);
 		lock();
-		while (!functionQueue.empty())
+
+		std::function<void()> function;
+		while(functionChannel.tryReceive(function))
 		{
-			auto f = functionQueue.front();
-			f();
-			functionQueue.pop();
+			function();
 		}
 
 		inputSource->update();
@@ -188,14 +187,9 @@ void MTVideoInputStream::threadedFunction()
 				streamCompleteFastEvent.notify(this, eventArgs);
 				streamCompleteEvent.notify(this, eventArgs);
 			}
-			unlock();
 		}
-		else
-		{
-			unlock();
-			yield();
-		}
-
+		unlock();
+		yield();
 	}
 
 	ofLogVerbose("MTVideoInput") << "Thread complete";

@@ -228,15 +228,13 @@ protected:
 	 bool initializeVideoCapture();
 	 std::shared_ptr<MTVideoInputSource> inputSource;
 private:
-	 std::queue<std::function<void()>> functionQueue;
-protected:
+	 ofThreadChannel<std::function<void()>> functionChannel;
+public:
 	 void enqueueFunction(std::function<void()> funct)
 	 {
-	 		lock();
-			functionQueue.push(funct);
-			unlock();
+	 	functionChannel.send(std::move(funct));
 	 }
-
+protected:
 	 void syncParameters();
 };
 
