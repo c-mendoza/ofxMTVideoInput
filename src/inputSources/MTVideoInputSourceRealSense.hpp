@@ -131,7 +131,7 @@ private:
 	static void SetRS2Option(const rs2::options& endpoint, rs2_option option, float val);
 
 	ofThreadChannel<std::pair<rs2_option, float>> optionsChannel;
-
+	ofThreadChannel<std::function<void()>> threadChannel;
 	static std::vector<std::shared_ptr<rs2::device>> Devices;
 
 

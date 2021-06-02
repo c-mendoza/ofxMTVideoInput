@@ -146,67 +146,76 @@ rs2::frame MTVideoInputSourceRealSense::getRS2Frame()
 
 void MTVideoInputSourceRealSense::threadedFunction()
 {
+	setThreadName(deviceID.get());
+	ofLogVerbose("MTVideoInputSourceRealSense") << deviceID.get() << " has ThreadID " << getThreadId();
 	while (isThreadRunning())
 	{
-		std::unique_lock<std::mutex> lck(mutex);
+		{
+			std::lock_guard<std::mutex> lck(mutex);
 
-
-		rs2::frame frame;
-		if (postProcessingQueue.poll_for_frame(&frame))
-		{ // Wait for next set of frames from the camera
-
-			if (enableDepth)
+			std::function<void()> function;
+			while(threadChannel.tryReceive(function))
 			{
-				rs2::frame filtered = frame.as<rs2::depth_frame>(); // Does not copy the frame, only adds a reference
+				function();
+			}
 
-				//	Apply filters.
-				// The implemented flow of the filters pipeline is in the following order:
-				// 1. apply decimation filter
-				// 2. apply threshold filter
-				// 3. transform the scene into disparity domain
-				// 4. apply spatial filter
-				// 5. apply temporal filter
-				// 6. revert the results back (if step Disparity filter was applied
-				// to depth domain (each post processing block is optional and can be applied independantly).
-				if (decFilterOn) filtered = dec_filter.process(filtered);
-				if (thrFilterOn) filtered = thr_filter.process(filtered);
-				if (useDisparity) filtered = depth_to_disparity.process(filtered);
-				if (spatFilterOn) filtered = spat_filter.process(filtered);
-				if (tempFilterOn) filtered = temp_filter.process(filtered);
-				if (useDisparity) filtered = disparity_to_depth.process(filtered);
+			rs2::frame frame;
+			if (postProcessingQueue.poll_for_frame(&frame))
+			{ // Wait for next set of frames from the camera
 
-				if (outputMode == Output2D)
+				if (enableDepth)
 				{
-					if (useColorizer) filtered = colorizer.colorize(filtered);
-					outputQueue.enqueue(filtered);
-				}
-				else if (outputMode == Output3D)
-				{
-					if (useColorizer)
-					{
-						colorizedFrame = colorizer.colorize(filtered);
-						pointcloud.map_to(colorizedFrame);
-					}
-					try
-					{
+					rs2::frame filtered = frame
+							.as<rs2::depth_frame>(); // Does not copy the frame, only adds a reference
 
-						outputQueue.enqueue(pointcloud.calculate(filtered));
-					}
-					catch (std::runtime_error& error)
+					//	Apply filters.
+					// The implemented flow of the filters pipeline is in the following order:
+					// 1. apply decimation filter
+					// 2. apply threshold filter
+					// 3. transform the scene into disparity domain
+					// 4. apply spatial filter
+					// 5. apply temporal filter
+					// 6. revert the results back (if step Disparity filter was applied
+					// to depth domain (each post processing block is optional and can be applied independantly).
+					if (decFilterOn) filtered = dec_filter.process(filtered);
+					if (thrFilterOn) filtered = thr_filter.process(filtered);
+					if (useDisparity) filtered = depth_to_disparity.process(filtered);
+					if (spatFilterOn) filtered = spat_filter.process(filtered);
+					if (tempFilterOn) filtered = temp_filter.process(filtered);
+					if (useDisparity) filtered = disparity_to_depth.process(filtered);
+
+					if (outputMode == Output2D)
 					{
-						ofLogError("MTVideoInputSourceRealSense") << "Pointcloud error: " << error.what();
+						if (useColorizer) filtered = colorizer.colorize(filtered);
+						outputQueue.enqueue(filtered);
 					}
-				}
-				else
-				{
-					outputQueue.enqueue(filtered);
-				}
+					else if (outputMode == Output3D)
+					{
+						if (useColorizer)
+						{
+							colorizedFrame = colorizer.colorize(filtered);
+							pointcloud.map_to(colorizedFrame);
+						}
+						try
+						{
+
+							outputQueue.enqueue(pointcloud.calculate(filtered));
+						}
+						catch (std::runtime_error& error)
+						{
+							ofLogError("MTVideoInputSourceRealSense") << "Pointcloud error: " << error.what();
+						}
+					}
+					else
+					{
+						outputQueue.enqueue(filtered);
+					}
 
 
+				}
 			}
 		}
-
-//			yield();
+		yield();
 	}
 }
 
@@ -305,20 +314,20 @@ void MTVideoInputSourceRealSense::deserialize(ofXml& serializer)
 
 void MTVideoInputSourceRealSense::setFilterOptions()
 {
-	std::unique_lock<std::mutex> lock(mutex);
 
-	dec_filter.set_option(RS2_OPTION_FILTER_MAGNITUDE, float(decFilterMagnitude.get()));
-	thr_filter.set_option(RS2_OPTION_MIN_DISTANCE, thrFilterMinDistance.get());
-	thr_filter.set_option(RS2_OPTION_MAX_DISTANCE, thrFilterMaxDistance.get());
-	spat_filter.set_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatFilterAlpha.get());
-	spat_filter.set_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatFilterDelta.get());
-	spat_filter.set_option(RS2_OPTION_FILTER_MAGNITUDE, float(spatFilterMag.get()));
-	spat_filter.set_option(RS2_OPTION_HOLES_FILL, float(spatFilterHolesFill.get()));
-	temp_filter.set_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, tempFilterAlpha.get());
-	temp_filter.set_option(RS2_OPTION_FILTER_SMOOTH_DELTA, tempFilterDelta.get());
-	temp_filter.set_option(RS2_OPTION_HOLES_FILL, float(tempFilterPersistence.get()));
-
-
+	threadChannel.send([this]()
+					   {
+						   dec_filter.set_option(RS2_OPTION_FILTER_MAGNITUDE, float(decFilterMagnitude.get()));
+						   thr_filter.set_option(RS2_OPTION_MIN_DISTANCE, thrFilterMinDistance.get());
+						   thr_filter.set_option(RS2_OPTION_MAX_DISTANCE, thrFilterMaxDistance.get());
+						   spat_filter.set_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatFilterAlpha.get());
+						   spat_filter.set_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatFilterDelta.get());
+						   spat_filter.set_option(RS2_OPTION_FILTER_MAGNITUDE, float(spatFilterMag.get()));
+						   spat_filter.set_option(RS2_OPTION_HOLES_FILL, float(spatFilterHolesFill.get()));
+						   temp_filter.set_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, tempFilterAlpha.get());
+						   temp_filter.set_option(RS2_OPTION_FILTER_SMOOTH_DELTA, tempFilterDelta.get());
+						   temp_filter.set_option(RS2_OPTION_HOLES_FILL, float(tempFilterPersistence.get()));
+					   });
 }
 
 MTVideoInputSourceRealSense::~MTVideoInputSourceRealSense()
