@@ -78,6 +78,7 @@ void MTBackgroundSubstraction2::process(MTProcessData& processData)
 	cv::bitwise_and(processData.processStream, dilateOutput, processOutput);
 
 	processData.processResult = processOutput;
+	processData.processStream = processOutput;
 	processData.processMask = dilateOutput;
 }
 
