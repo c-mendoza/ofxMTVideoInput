@@ -2,6 +2,8 @@
 // Created by Cristobal Mendoza on 7/17/20.
 //
 
+#ifdef MTVI_USE_REALSENSE
+
 #include "MTVideoInputSourceRealSense.hpp"
 #include "librealsense2/hpp/rs_processing.hpp"
 #include "librealsense2/hpp/rs_device.hpp"
@@ -559,5 +561,6 @@ void MTVideoInputSourceRealSense::SetRS2Option(const rs2::options& endpoint, rs2
 	}
 }
 
+#endif
 
 

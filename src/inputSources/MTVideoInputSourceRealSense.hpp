@@ -5,6 +5,7 @@
 #ifndef NERVOUSSTRUCTUREOF_MTVIDEOINPUTSOURCEREALSENSE_HPP
 #define NERVOUSSTRUCTUREOF_MTVIDEOINPUTSOURCEREALSENSE_HPP
 
+#ifdef MTVI_USE_REALSENSE
 #include <MTVideoInputSource.hpp>
 #include "ofxMTVideoInput.h"
 #include "librealsense2/rs.hpp"
@@ -138,5 +139,6 @@ private:
 	rs2::frame colorizedFrame;
 };
 
+#endif
 
 #endif //NERVOUSSTRUCTUREOF_MTVIDEOINPUTSOURCEREALSENSE_HPP

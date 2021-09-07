@@ -50,6 +50,7 @@ void MTVideoInput::init()
 		return sources;
 	});
 
+	#ifdef MTVI_USE_REALSENSE
 	registerInputSource<MTVideoInputSourceRealSense>("MTVideoInputSourceRealSense", []()
 	{
 		std::vector<MTVideoInputSourceInfo> sources;
@@ -64,6 +65,8 @@ void MTVideoInput::init()
 		}
 		return sources;
 	});
+	#endif
+
 	updateInputSources(); // Probably don't need this
 
 	// Need to stop all streams at the exitEvent instead of the destructor in order to avoid
