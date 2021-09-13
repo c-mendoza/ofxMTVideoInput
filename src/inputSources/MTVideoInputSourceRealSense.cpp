@@ -2,9 +2,10 @@
 // Created by Cristobal Mendoza on 7/17/20.
 //
 
+#include "MTVideoInputSourceRealSense.hpp"
+
 #ifdef MTVI_USE_REALSENSE
 
-#include "MTVideoInputSourceRealSense.hpp"
 #include "librealsense2/hpp/rs_processing.hpp"
 #include "librealsense2/hpp/rs_device.hpp"
 #include "librealsense2/hpp/rs_sensor.hpp"
