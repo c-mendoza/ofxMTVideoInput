@@ -57,6 +57,7 @@ public:
 //////////////////////////////////
 
 	 ofParameter<bool> mirrorVideo;
+	 ofParameter<bool> flipVideo;
 
 // These are read only because they are not thread-safe. Use the setters
 // declared

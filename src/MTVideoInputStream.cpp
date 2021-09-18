@@ -19,13 +19,14 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 {
 
 	parameters.add(isRunning.set("Running", false),
-				   mirrorVideo.set("Mirror Video", true),
+						mirrorVideo.set("Mirror Video", true),
+						flipVideo.set("Flip Video", false),
 //									processingWidth.set("Process Width", 320, 120, 1920),
 //									processingHeight.set("Process Height", 240, 80, 1080),
-				   processingSize.set("Processing Size", 1.0, 0.1, 1.0),
-				   useROI.set("Use ROI", false),
-				   outputRegion.set("Output Region", ofPath()),
-				   inputROI.set("Input ROI", ofPath()));
+						processingSize.set("Processing Size", 1.0, 0.1, 1.0),
+						useROI.set("Use ROI", false),
+						outputRegion.set("Output Region", ofPath()),
+						inputROI.set("Input ROI", ofPath()));
 	processesParameters.setName("Video Processes");
 	inputSourcesParameters.setName("Input Sources");
 	parameters.add(processesParameters, inputSourcesParameters);
@@ -44,23 +45,23 @@ MTVideoInputStream::MTVideoInputStream(std::string name) : MTModel(name)
 	updateTransformInternals();
 
 	addEventListener(useROI.newListener([this](bool& val)
-										{
-											enqueueFunction([this]()
-															{
-																updateTransformInternals();
-															});
-										}));
+													{
+														enqueueFunction([this]()
+																			 {
+																				 updateTransformInternals();
+																			 });
+													}));
 
 	addEventListener(processingSize.newListener([this](float val)
-												{
-													if (!isDeserializing)
-													{
-														enqueueFunction([this, val]()
-																		{
-																			setProcessingSize(val);
-																		});
-													}
-												}));
+															  {
+																  if (!isDeserializing)
+																  {
+																	  enqueueFunction([this, val]()
+																							{
+																								setProcessingSize(val);
+																							});
+																  }
+															  }));
 
 //	addEventListener(outputRegion.newListener([this](ofPath& val) {
 //		updateTransformInternals();
@@ -119,7 +120,7 @@ void MTVideoInputStream::threadedFunction()
 		lock();
 
 		std::function<void()> function;
-		while(functionChannel.tryReceive(function))
+		while (functionChannel.tryReceive(function))
 		{
 			function();
 		}
@@ -139,10 +140,23 @@ void MTVideoInputStream::threadedFunction()
 			fpsCounter.newFrame();
 			videoInputImage = ofxCv::toCv(static_cast<const ofPixels&>(inputSource->getPixels()));
 
-			if (mirrorVideo.get())
+			if (mirrorVideo.get() && flipVideo.get())
 			{
-				cv::flip(videoInputImage, videoInputImage, 1);
+				cv::flip(videoInputImage, videoInputImage, -1);
 			}
+			else
+			{
+				if (mirrorVideo.get())
+				{
+					cv::flip(videoInputImage, videoInputImage, 0);
+				}
+
+				if (flipVideo.get())
+				{
+					cv::flip(videoInputImage, videoInputImage, 1);
+				}
+			}
+
 
 			if (processingSize != 1.0f)
 			{
@@ -157,9 +171,9 @@ void MTVideoInputStream::threadedFunction()
 			{
 				cv::Mat result;
 				cv::warpPerspective(workingImage,
-									result,
-									roiToProcessTransform,
-									processSize);
+										  result,
+										  roiToProcessTransform,
+										  processSize);
 				workingImage = result;
 			}
 
@@ -309,7 +323,7 @@ void MTVideoInputStream::setInputSource(MTVideoInputSourceInfo sourceInfo, ofXml
 		if (inputSource->deviceID->compare(foundDevID) != 0)
 		{
 			ofLogWarning("MTVideoInputStream") << "Did not find deviceID " << inputSource->deviceID
-											   << ". Assigning found deviceID " << foundDevID << " instead.";
+														  << ". Assigning found deviceID " << foundDevID << " instead.";
 			inputSource->deviceID.setWithoutEventNotifications(foundDevID);
 		}
 		inputSourcesParameters.add(inputSource->getParameters());
@@ -361,14 +375,14 @@ void MTVideoInputStream::addVideoProcessAtIndex(std::shared_ptr<MTVideoProcess> 
 	process->setProcessSize(processingWidth, processingHeight);
 	process->setup();
 	int count = std::count_if(videoProcesses.begin(), videoProcesses.end(),
-							  [&process](std::shared_ptr<MTVideoProcess> p)
-							  {
-								  if (p->getName().find(process->getName()) != string::npos)
-								  {
-									  return true;
-								  }
-								  return false;
-							  });
+									  [&process](std::shared_ptr<MTVideoProcess> p)
+									  {
+										  if (p->getName().find(process->getName()) != string::npos)
+										  {
+											  return true;
+										  }
+										  return false;
+									  });
 
 	if (count > 0)
 	{
@@ -506,7 +520,7 @@ void MTVideoInputStream::deserialize(ofXml& serializer)
 		if (auto typenameXml = processXml.getChild("Process_Type_Name"))
 		{
 			std::shared_ptr<MTVideoProcess> process = MTVideoInput::Instance().createVideoProcess(
-					typenameXml.getValue());
+				typenameXml.getValue());
 			if (process != nullptr)
 			{
 				addVideoProcess(process);
