@@ -177,7 +177,7 @@ void MTVideoInput::syncParameters()
 
 std::istream& operator>>(std::istream& is, MTVideoInput& path)
 {
-	ofLogError(__PRETTY_FUNCTION__) << "is not implemented!";
+	ofLogError(__FUNCTION__) << "is not implemented!";
 	return is;
 }
 
